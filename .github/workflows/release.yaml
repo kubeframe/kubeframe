@@ -36,6 +36,7 @@ jobs:
         git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
 
   publish-cli:
+    needs: release
     name: Build CLI
     runs-on: ubuntu-latest
     steps:
