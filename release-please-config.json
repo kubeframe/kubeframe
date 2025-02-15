@@ -1,13 +1,15 @@
 {
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/refs/heads/main/schemas/config.json",
-    "release-type": "node",
+    "release-type": "manifest",
     "bump-minor-pre-major": true,
     "packages": {
       "cli": {
-        "package-name": "@kubeframe/cli"
+        "package-name": "@kubeframe/cli",
+        "release-type": "node"
       },
       "core": {
-        "package-name": "@kubeframe/core"
+        "package-name": "@kubeframe/core",
+        "release-type": "node"
       }
     }
   }
