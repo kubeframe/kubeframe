@@ -83,7 +83,7 @@ function fetchKubernetesOpenApiSpecs(version: string, directory: string) {
     }
 
     // Clone the kubernetes repository
-    const cloneCmd = `git clone --depth 1 --branch release-${version} git@github.com:kubernetes/kubernetes.git ${directory}`
+    const cloneCmd = `git clone --depth 1 --branch release-${version} https://github.com/kubernetes/kubernetes.git ${directory}`
     execSync(cloneCmd, {
         stdio: 'inherit',
     });
