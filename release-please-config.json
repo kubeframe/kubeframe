@@ -5,11 +5,13 @@
     "packages": {
       "cli": {
         "package-name": "@kubeframe/cli",
-        "release-type": "node"
+        "release-type": "node",
+        "release-as":"0.1.0"
       },
       "core": {
         "package-name": "@kubeframe/core",
-        "release-type": "node"
+        "release-type": "node",
+        "release-as":"0.1.0"
       }
     }
   }
