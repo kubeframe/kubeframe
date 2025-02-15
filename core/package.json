@@ -1,6 +1,6 @@
 {
     "name": "@kubeframe/core",
-    "version": "0.0.1",
+    "version": "0.0.0",
     "scripts": {
         "build": "rm -rf dist && tsc"
     },

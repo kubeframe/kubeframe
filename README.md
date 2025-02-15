@@ -11,7 +11,7 @@ KubeFrame is a set of tools and Typescript libraries to build flexible and reusa
 ### Create a new project
 
 ```bash
-npx @kube-frame/cli create my-project
+npx @kubeframe/cli create my-project
 ```
 
 #### Contents of the generated project
