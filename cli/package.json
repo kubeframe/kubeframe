@@ -1,11 +1,11 @@
 {
   "name": "@kubeframe/cli",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "description": "KubeFrame-CLI is a tool for generating Typescript classes and interfaces from Kubernetes OpenAPI specs and CRDs.",
   "main": "main.js",
   "scripts": {
     "build": "rm -rf dist && tsc && cp -r base ./dist/base && npm run add_shebang && chmod +x dist/main.js",
-    "add_shebang":"node ./helpers/add_shebang.js dist/main.js"
+    "add_shebang": "node ./helpers/add_shebang.js dist/main.js"
   },
   "author": "",
   "license": "ISC",
