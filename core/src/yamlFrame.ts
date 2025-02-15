@@ -1,0 +1,36 @@
+import { readFileSync } from "fs";
+import { Frame } from "./frame";
+import * as YAML from 'yaml';
+import { APIResourceFactory } from "@kubeframe/k8s/base/APIResourceFactory";
+import { ResourceCollector } from "./resourceCollector";
+
+export class YAMLFrame extends Frame {
+
+    private source: string;
+
+    constructor(private name: string, yamlOrPath: string, isPath: boolean) {
+        super();
+        
+        if (isPath) {
+            this.source = readFileSync(yamlOrPath, 'utf8');
+        } else {
+            this.source = yamlOrPath;
+        }
+    }
+
+    async doPreBuild() { }
+
+    async doBuild(resourceCollector: ResourceCollector) {
+        const docs = YAML.parseAllDocuments(this.source);
+        const apiFactory = new APIResourceFactory();
+        docs.forEach(doc => {
+            const json = doc.toJSON();
+            const resource = apiFactory.createFromPlainJSON(json);
+            resourceCollector.addResource({
+                frameName: this.name,
+            }, resource);
+        });
+    }
+
+    async doPostBuild() { }
+}

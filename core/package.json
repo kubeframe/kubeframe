@@ -1,0 +1,16 @@
+{
+    "name": "@kubeframe/core",
+    "version": "0.0.1",
+    "scripts": {
+        "build": "rm -rf dist && tsc"
+    },
+    "dependencies": {
+        "endent": "^2.1.0",
+        "yaml": "^2.7.0",
+        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@0.0.3"
+    },
+    "devDependencies": {
+        "@types/node": "^22.13.1",
+        "typescript": "^5.7.3"
+    }
+}
