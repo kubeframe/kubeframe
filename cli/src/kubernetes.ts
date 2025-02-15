@@ -687,7 +687,6 @@ function buildProject(outputDir: string) {
 }
 
 function generateFactoryList(outputDir: string, factoryGenerationProperties: FactoryGenerationProperties[]) {
-    console.log(JSON.stringify(factoryGenerationProperties, null, 4));
 
     const proj = new Project();
     const src = proj.createSourceFile(
