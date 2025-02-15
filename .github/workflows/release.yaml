@@ -34,3 +34,18 @@ jobs:
         git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
         git push origin v${{ steps.release.outputs.major }}
         git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
+
+  publish-cli:
+    name: Build CLI
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '22'
+    - name: Install dependencies
+      working-directory: ./cli
+      run: npm ci
+    - name: Build
+      working-directory: ./cli
+      run: npm run build
