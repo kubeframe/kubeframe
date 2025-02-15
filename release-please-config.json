@@ -3,6 +3,10 @@
     "release-type": "manifest",
     "bump-minor-pre-major": true,
     "packages": {
+      ".": {
+        "release-type": "node",
+        "release-as":"0.1.0"
+      },
       "cli": {
         "package-name": "@kubeframe/cli",
         "release-type": "node",
