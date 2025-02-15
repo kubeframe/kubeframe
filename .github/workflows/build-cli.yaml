@@ -28,3 +28,8 @@ jobs:
       - name: Build
         working-directory: ./cli
         run: npm run build
+
+      - name: Generate Kubernetes manifest
+        working-directory: ./cli
+        run:
+          dist/main.js generate-k8s --output ../k8s
