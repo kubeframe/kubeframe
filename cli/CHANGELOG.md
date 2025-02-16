@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.8...cli-v0.2.0) (2025-02-16)
+
+
+### Features
+
+* Convert to module and add create-project command to cli ([6960eaf](https://github.com/kubeframe/kubeframe/commit/6960eaf0b3383077338e2d11ef039d2f3793cae9))
+
 ## [0.1.8](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.7...cli-v0.1.8) (2025-02-16)
 
 
