@@ -82,7 +82,7 @@ async function generate(crd: CRD, output: string) {
         const groupVersionKind: GroupVersionKind = {
             group: crd.spec.group,
             version: version.name,
-            kind: crd.spec.names.kind
+            kind: crd.spec.names.kind,
         };
 
         console.info(`Generating ${groupVersionKind.kind} for ${groupVersionKind.group}/${groupVersionKind.version}`);

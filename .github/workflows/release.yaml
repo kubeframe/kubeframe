@@ -15,14 +15,14 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     outputs:
-      cli_major: ${{ steps.release.outputs['cli--major'] }}
-      cli_minor: ${{ steps.release.outputs['cli--minor'] }}
-      cli_patch: ${{ steps.release.outputs['cli--patch'] }}
-      cli_release_created: ${{ steps.release.outputs['cli--release_created'] }}
-      core_major: ${{ steps.release.outputs['core--major'] }}
-      core_minor: ${{ steps.release.outputs['core--minor'] }}
-      core_patch: ${{ steps.release.outputs['core--patch'] }}
-      core_release_created: ${{ steps.release.outputs['core--release_created'] }}
+      cli_major: ${{ steps.release.outputs['packages/cli--major'] }}
+      cli_minor: ${{ steps.release.outputs['packages/cli--minor'] }}
+      cli_patch: ${{ steps.release.outputs['packages/cli--patch'] }}
+      cli_release_created: ${{ steps.release.outputs['packages/cli--release_created'] }}
+      core_major: ${{ steps.release.outputs['packages/core--major'] }}
+      core_minor: ${{ steps.release.outputs['packages/core--minor'] }}
+      core_patch: ${{ steps.release.outputs['packages/core--patch'] }}
+      core_release_created: ${{ steps.release.outputs['packages/core--release_created'] }}
     steps:
     - uses: googleapis/release-please-action@v4
       id: release
