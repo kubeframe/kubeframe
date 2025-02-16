@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.2...cli-v0.1.3) (2025-02-16)
+
+
+### Bug Fixes
+
+* Debug release ([2107d64](https://github.com/kubeframe/kubeframe/commit/2107d645cc095aadc609da577a429623f67c58b0))
+
 ## [0.1.2](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.1...cli-v0.1.2) (2025-02-16)
 
 
