@@ -70,12 +70,15 @@ jobs:
     if: ${{ needs.publish-cli.result == 'success' }}
     name: Generate Kubernetes Packages
     runs-on: ubuntu-latest
+    env:
+      LATEST_KUBERNETES_VERSION: "1.32"
     strategy:
       matrix:
+        # Versions numbers must be wrapped in quotes because if it ends with 0 it will be converted from 1.30 to 1.3
         versions:
-          - 1.32
-          - 1.31
-          - 1.30
+          - "1.32"
+          - "1.31"
+          - "1.30"
     steps:
       - uses: actions/setup-node@v2
         with:
@@ -83,29 +86,29 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - name: Generate k8s-${{ matrix.versions }} Package
         run: |
-          npx @kubeframe/cli generate-k8s --output ./k8s --version ${{ matrix.versions }}
+          npx @kubeframe/cli generate-k8s ${{ matrix.versions }} --output ./k8s
       - name: Build
         working-directory: ./k8s
         run: npm run build
       - name: Copy package.json
         working-directory: ./k8s
         run: cp ./package.json ./dist/package.json
-      #- name: Publish
-      #  working-directory: ./k8s/dist
-      #  env:
-      #    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      #  run: npm publish --access public
+      - name: Publish
+        working-directory: ./k8s/dist
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
       # Update version for core package if its latest version of k8s package
       - name: Update Core Package Version
-        if: ${{ matrix.versions == '1.32' }}
+        if: ${{ matrix.versions == env.LATEST_KUBERNETES_VERSION }}
         working-directory: ./core
         run: |
-          jq '.dependencies["@kubeframe/k8s"] = "npm:@kubeframe/k8s-1.32@${{needs.release.outputscli_version}}"' package.json > tmp.json && mv tmp.json package.json
+          jq '.dependencies["@kubeframe/k8s"] = "npm:@kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}@${{needs.release.outputscli_version}}"' package.json > tmp.json && mv tmp.json package.json
           git checkout -b update-core-package-version-${{needs.release.outputscli_version}}
           git add package.json
-          git commit -m "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputscli_version}}"
+          git commit -m "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputscli_version}}"
           git push origin update-core-package-version-${{needs.release.outputscli_version}}
-          gh pr create --title "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputscli_version}}" --body "This PR updates the core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputscli_version}}" --base main --head update-core-package-version-${{needs.release.outputscli_version}}
+          gh pr create --title "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputscli_version}}" --body "This PR updates the core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputscli_version}}" --base main --head update-core-package-version-${{needs.release.outputscli_version}}
     
 
   
