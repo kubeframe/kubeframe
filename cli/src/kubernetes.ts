@@ -710,6 +710,7 @@ function generateFactoryList(outputDir: string, factoryGenerationProperties: Fac
             moduleSpecifier: `../${prop.path}`,
             namedImports: [`${prop.className} as ${alternateName}`],
         });
+
         mappingProperty.getFirstDescendantByKind(ts.SyntaxKind.ArrayLiteralExpression)
             ?.insertElement(0, `['${groupVersionKindToString(prop.groupVersionKind)}', (json: any) => new ${alternateName}(json)]\n`);
     });

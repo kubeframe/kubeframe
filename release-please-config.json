@@ -5,8 +5,7 @@
     "packages": {
       "cli": {
         "package-name": "@kubeframe/cli",
-        "release-type": "node",
-        "release-as":"0.1.0"
+        "release-type": "node"
       },
       "core": {
         "package-name": "@kubeframe/core",
