@@ -4,9 +4,7 @@ export function comparePropertyName(a: string, b: string) {
     return a === b || a === `'${b}'` || a === `"${b}"`;
 }
 
-export function convertClassToInterface(sourceFile: SourceFile, className: string, interfaceName: string) {
-    
-}
+export function convertClassToInterface(sourceFile: SourceFile, className: string, interfaceName: string) { }
 
 export function convertInterfaceToClass(sourceFile: SourceFile, interfaceName: string, className: string) {
     const interfaceDeclaration = sourceFile.getInterface(interfaceName);
