@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.7](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.6...cli-v0.1.7) (2025-02-16)
+
+
+### Bug Fixes
+
+* Fix openapi generator execution when using npx ([ade51b4](https://github.com/kubeframe/kubeframe/commit/ade51b4ea538ea1b6c3b39e5fc4956863431cb26))
+
 ## [0.1.6](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.5...cli-v0.1.6) (2025-02-16)
 
 
