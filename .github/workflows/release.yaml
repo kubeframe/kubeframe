@@ -18,6 +18,7 @@ jobs:
       major: ${{ steps.release.outputs.major }}
       minor: ${{ steps.release.outputs.minor }}
       release_created: ${{ steps.release.outputs.release_created }}
+      paths_released: ${{ steps.release.outputs.paths_released }}
     steps:
     - uses: googleapis/release-please-action@v4
       id: release
@@ -41,7 +42,7 @@ jobs:
 
   publish-cli:
     needs: release
-    if: ${{ needs.release.outputs.release_created }}
+    if: ${{ needs.release.outputs.release_created && contains(fromJSON(needs.release.outputs.paths_released), 'cli') }}
     name: Build CLI
     runs-on: ubuntu-latest
     steps:
@@ -49,11 +50,62 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: '22'
+        registry-url: 'https://registry.npmjs.org'
     - name: Install dependencies
       working-directory: ./cli
       run: npm ci
     - name: Build
       working-directory: ./cli
       run: npm run build
+    - name: Publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      working-directory: ./cli
+      run: npm publish --access public
+
+  publish-k8s:
+    needs:
+    - publish-cli
+    - release
+    if: ${{ needs.publish-cli.result == 'success' }}
+    name: Generate Kubernetes Packages
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        versions:
+          - 1.32
+          - 1.31
+          - 1.30
+    steps:
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Generate k8s-${{ matrix.versions }} Package
+        run: |
+          npx @kubeframe/cli generate-k8s --output ./k8s --version ${{ matrix.versions }}
+      - name: Build
+        working-directory: ./k8s
+        run: npm run build
+      - name: Copy package.json
+        working-directory: ./k8s
+        run: cp ./package.json ./dist/package.json
+      #- name: Publish
+      #  working-directory: ./k8s/dist
+      #  env:
+      #    NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      #  run: npm publish --access public
+      # Update version for core package if its latest version of k8s package
+      - name: Update Core Package Version
+        if: ${{ matrix.versions == '1.32' }}
+        working-directory: ./core
+        run: |
+          jq '.dependencies["@kubeframe/k8s"] = "npm:@kubeframe/k8s-1.32@${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}"' package.json > tmp.json && mv tmp.json package.json
+          git checkout -b update-core-package-version-${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}
+          git add package.json
+          git commit -m "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}"
+          git push origin update-core-package-version-${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}
+          gh pr create --title "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}" --body "This PR updates the core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}" --base main --head update-core-package-version-${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}
+    
 
   
