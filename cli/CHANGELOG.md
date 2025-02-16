@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.3...cli-v0.1.4) (2025-02-16)
+
+
+### Bug Fixes
+
+* Debug add toJSON ([0c669e0](https://github.com/kubeframe/kubeframe/commit/0c669e03adc0100ca821b532f8da17af4fdb15ff))
+
 ## [0.1.3](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.2...cli-v0.1.3) (2025-02-16)
 
 
