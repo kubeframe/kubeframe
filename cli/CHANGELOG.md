@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.5...cli-v0.1.6) (2025-02-16)
+
+
+### Bug Fixes
+
+* Use dependency version and package version for k8s packages from cli package.json ([4214af9](https://github.com/kubeframe/kubeframe/commit/4214af963d60fe34608344169ed7008a15cd5cf9))
+
 ## [0.1.5](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.4...cli-v0.1.5) (2025-02-16)
 
 
