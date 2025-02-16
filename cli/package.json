@@ -1,6 +1,6 @@
 {
   "name": "@kubeframe/cli",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "KubeFrame-CLI is a tool for generating Typescript classes and interfaces from Kubernetes OpenAPI specs and CRDs.",
   "main": "main.js",
   "scripts": {
