@@ -214,7 +214,6 @@ function updateReferences(obj: any, reverseModelRemap: Map<string, string>) {
 function runOpenApiGenerator(inputDir: string, outputDir: string, tmpDir: string) {
 
     const config = {
-        $schema: "./node_modules/@openapitools/openapi-generator-cli/config.schema.json",
         spaces: 4,
         "generator-cli": {
             version: "7.11.0",
@@ -241,11 +240,8 @@ function runOpenApiGenerator(inputDir: string, outputDir: string, tmpDir: string
     const configPath = path.join(tmpDir, 'openapi-generator-config.json');
     writeFileSync(configPath, JSON.stringify(config, null, 4));
 
-    const scriptDir = __dirname;
-    const cliCmd = path.join(scriptDir, '../node_modules/.bin/openapi-generator-cli');
-
-    // Remove the generated directory
-    execSync(`${cliCmd} generate --openapitools ${configPath}`, {
+    execSync(`npm run openapi-generate -- --openapitools ${configPath}`, {
+        cwd: path.join(__dirname, '../'),
         stdio: 'inherit',
     });
 }
