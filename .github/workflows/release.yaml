@@ -28,6 +28,17 @@ jobs:
       id: release
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Debug output
+      run: |
+        echo "${{ steps.release.outputs }}"
+        echo "CLI Major: ${{ steps.release.outputs['packages/cli--major'] }}"
+        echo "CLI Minor: ${{ steps.release.outputs['packages/cli--minor'] }}"
+        echo "CLI Patch: ${{ steps.release.outputs['packages/cli--patch'] }}"
+        echo "CLI Release Created: ${{ steps.release.outputs['packages/cli--release_created'] }}"
+        echo "Core Major: ${{ steps.release.outputs['packages/core--major'] }}"
+        echo "Core Minor: ${{ steps.release.outputs['packages/core--minor'] }}"
+        echo "Core Patch: ${{ steps.release.outputs['packages/core--patch'] }}"
+        echo "Core Release Created: ${{ steps.release.outputs['packages/core--release_created'] }}"
 
     #- uses: actions/checkout@v4
     #- name: Tag major and minor versions

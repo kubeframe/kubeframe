@@ -4,7 +4,7 @@ import { generateFromConfigFile, generateFromFile, generateFromUrl } from "./crd
 
 const program = new Command();
 program
-    .name('kubeframe-cli');
+    .name('@kubeframe/cli');
 
 program
     .command('generate-k8s')
