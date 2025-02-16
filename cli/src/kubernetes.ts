@@ -702,7 +702,6 @@ function generateFactoryList(outputDir: string, factoryGenerationProperties: Fac
     }
 
     factoryGenerationProperties.forEach(prop => {
-
         // There could be multiple classes with the same name but different group/version/kind
         const alternateName = prop.path.split('/').map(c => upperCaseFirstLetter(c)).join('');
 

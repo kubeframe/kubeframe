@@ -15,30 +15,15 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     outputs:
-      cli_major: ${{ steps.release.outputs['packages/cli--major'] }}
-      cli_minor: ${{ steps.release.outputs['packages/cli--minor'] }}
-      cli_patch: ${{ steps.release.outputs['packages/cli--patch'] }}
-      cli_release_created: ${{ steps.release.outputs['packages/cli--release_created'] }}
-      core_major: ${{ steps.release.outputs['packages/core--major'] }}
-      core_minor: ${{ steps.release.outputs['packages/core--minor'] }}
-      core_patch: ${{ steps.release.outputs['packages/core--patch'] }}
-      core_release_created: ${{ steps.release.outputs['packages/core--release_created'] }}
+      cli_version: ${{ steps.release.outputs['cli--version'] }}
+      cli_release_created: ${{ steps.release.outputs['cli--release_created'] }}
+      core_vesion: ${{ steps.release.outputs['core--version'] }}
+      core_release_created: ${{ steps.release.outputs['core--release_created'] }}
     steps:
     - uses: googleapis/release-please-action@v4
       id: release
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Debug output
-      run: |
-        echo "${{ toJSON(steps.release.outputs) }}"
-        echo "CLI Major: ${{ steps.release.outputs['packages/cli--major'] }}"
-        echo "CLI Minor: ${{ steps.release.outputs['packages/cli--minor'] }}"
-        echo "CLI Patch: ${{ steps.release.outputs['packages/cli--patch'] }}"
-        echo "CLI Release Created: ${{ steps.release.outputs['packages/cli--release_created'] }}"
-        echo "Core Major: ${{ steps.release.outputs['packages/core--major'] }}"
-        echo "Core Minor: ${{ steps.release.outputs['packages/core--minor'] }}"
-        echo "Core Patch: ${{ steps.release.outputs['packages/core--patch'] }}"
-        echo "Core Release Created: ${{ steps.release.outputs['packages/core--release_created'] }}"
 
     #- uses: actions/checkout@v4
     #- name: Tag major and minor versions
@@ -57,7 +42,7 @@ jobs:
 
   publish-cli:
     needs: release
-    if: ${{ needs.release.cli_release_created }}
+    if: ${{ needs.release.outputs.cli_release_created }}
     name: Build CLI
     runs-on: ubuntu-latest
     steps:
@@ -115,12 +100,12 @@ jobs:
         if: ${{ matrix.versions == '1.32' }}
         working-directory: ./core
         run: |
-          jq '.dependencies["@kubeframe/k8s"] = "npm:@kubeframe/k8s-1.32@${{needs.release.outputs.cli_major}}.${{needs.release.outputs.cli_minor}}.${{needs.release.outputs.cli_patch}}"' package.json > tmp.json && mv tmp.json package.json
-          git checkout -b update-core-package-version-${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}.${{needs.release.outputs.cli_patch}}
+          jq '.dependencies["@kubeframe/k8s"] = "npm:@kubeframe/k8s-1.32@${{needs.release.outputscli_version}}"' package.json > tmp.json && mv tmp.json package.json
+          git checkout -b update-core-package-version-${{needs.release.outputscli_version}}
           git add package.json
-          git commit -m "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}.${{needs.release.outputs.cli_patch}}"
-          git push origin update-core-package-version-${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}.${{needs.release.outputs.cli_patch}}
-          gh pr create --title "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}.${{needs.release.outputs.cli_patch}}" --body "This PR updates the core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}.${{needs.release.outputs.cli_patch}}" --base main --head update-core-package-version-${{needs.release.outputs.major}}.${{needs.release.outputs.minor}}.${{needs.release.outputs.cli_patch}}
+          git commit -m "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputscli_version}}"
+          git push origin update-core-package-version-${{needs.release.outputscli_version}}
+          gh pr create --title "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputscli_version}}" --body "This PR updates the core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:${{needs.release.outputscli_version}}" --base main --head update-core-package-version-${{needs.release.outputscli_version}}
     
 
   
