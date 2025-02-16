@@ -17,7 +17,7 @@ program
 
 const crdCommand = program
     .command('generate-crd')
-    .description('Generate CRD models')
+    .description('Generate CRD models');
 
 crdCommand
     .command('from-url')

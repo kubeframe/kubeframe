@@ -30,7 +30,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     - name: Debug output
       run: |
-        echo "${{ steps.release.outputs }}"
+        echo "${{ toJSON(steps.release.outputs) }}"
         echo "CLI Major: ${{ steps.release.outputs['packages/cli--major'] }}"
         echo "CLI Minor: ${{ steps.release.outputs['packages/cli--minor'] }}"
         echo "CLI Patch: ${{ steps.release.outputs['packages/cli--patch'] }}"
