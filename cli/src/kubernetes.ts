@@ -624,16 +624,21 @@ function createProjectStructure(outputDir: string, version: string) {
     const tsconfigPath = path.join(outputDir, 'tsconfig.json');
     writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 4));
 
+    // Get CLI package.json
+    const cliPackageJsonPath = path.join(__dirname, '../package.json');
+    const cliPackageJson = JSON.parse(readFileSync(cliPackageJsonPath).toString());
+
     const packageJson = {
         "name": `@kubeframe/k8s-${version}`,
-        "version": "0.0.1",
+        // Use the same version as the CLI
+        "version": cliPackageJson.version,
         "description": "Generated models for kubeframe",
         "scripts": {
             "build": "rm -rf dist && tsc",
         },
         "devDependencies": {
-            "typescript": "^5.7.3",
-            "@types/node": "^22.13.4",
+            "typescript": cliPackageJson.devDependencies.typescript,
+            "@types/node": cliPackageJson.devDependencies['@types/node'],
         },
         "keywords": [],
         "author": "",
