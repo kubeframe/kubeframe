@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.4...cli-v0.1.5) (2025-02-16)
+
+
+### Bug Fixes
+
+* Trigger release ([e0cbd57](https://github.com/kubeframe/kubeframe/commit/e0cbd57f9d81bc69093443247aba89147d6d38a2))
+
 ## [0.1.4](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.3...cli-v0.1.4) (2025-02-16)
 
 
