@@ -643,6 +643,16 @@ function createProjectStructure(outputDir: string, version: string) {
 
     const packageJsonPath = path.join(outputDir, 'package.json');
     writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 4));
+
+    // Create src directory
+    const srcDir = path.join(outputDir, 'src');
+    if (!existsSync(srcDir)) {
+        mkdirSync(srcDir, { recursive: true });
+    }
+
+    // Create version.ts file
+    const versionFile = path.join(srcDir, 'version.ts');
+    writeFileSync(versionFile, `export const KUBEFRAME_KUBERNETES_VERSION = '${version}';\n`);
 }
 
 function copyModels(modelsDir: string, outputDir: string) {
