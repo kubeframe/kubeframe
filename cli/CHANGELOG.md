@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.7...cli-v0.1.8) (2025-02-16)
+
+
+### Bug Fixes
+
+* Add version.ts file containing k8s version for which package was generated ([ae495d4](https://github.com/kubeframe/kubeframe/commit/ae495d4a785255f41d00227c5a34efe6094e9cc2))
+
 ## [0.1.7](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.6...cli-v0.1.7) (2025-02-16)
 
 
