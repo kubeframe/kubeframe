@@ -4,10 +4,11 @@
   "description": "KubeFrame-CLI is a tool for generating Typescript classes and interfaces from Kubernetes OpenAPI specs and CRDs.",
   "main": "main.js",
   "scripts": {
-    "build": "rm -rf dist && tsc && cp -r base ./dist/base && npm run add_shebang && chmod +x dist/main.js",
+    "build": "rm -rf dist && tsc && cp -r base ./dist/base && cp -r project_base ./dist/project_base && npm run add_shebang && chmod +x dist/main.js",
     "add_shebang": "node ./helpers/add_shebang.js dist/main.js",
     "openapi-generate": "openapi-generator-cli generate"
   },
+  "type": "module",
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -23,6 +24,7 @@
     "@openapitools/openapi-generator-cli": "^2.16.3",
     "commander": "^13.1.0",
     "json-schema-to-typescript": "^15.0.4",
+    "latest-version": "^9.0.0",
     "lodash": "^4.17.21",
     "ts-morph": "^25.0.0",
     "typescript": "^5.7.3",

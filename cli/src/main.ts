@@ -1,6 +1,7 @@
 import { Command } from "commander";
-import { generate } from "./kubernetes";
-import { generateFromConfigFile, generateFromFile, generateFromUrl } from "./crd";
+import { generate } from "./kubernetes.js";
+import { generateFromConfigFile, generateFromFile, generateFromUrl } from "./crd.js";
+import { createProject } from "./createProject.js";
 
 const program = new Command();
 program
@@ -41,6 +42,15 @@ crdCommand
     .option('-o, --output <char>', 'Output directory', './output-crd')
     .action((file, options) => {
         generateFromConfigFile(file, options.output);
+    });
+
+program
+    .command('create-project')
+    .description('Create a new project')
+    .argument('<name>', 'Project name')
+    .option('-v, --version <char>', 'Kubernetes version', '1.32')
+    .action((name, options) => {
+        createProject(name, options.version);
     });
 
 program.parse();

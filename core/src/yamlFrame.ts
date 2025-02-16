@@ -1,8 +1,8 @@
 import { readFileSync } from "fs";
-import { Frame } from "./frame";
+import { Frame } from "./frame.js";
 import * as YAML from 'yaml';
-import { APIResourceFactory } from "@kubeframe/k8s/base/APIResourceFactory";
-import { ResourceCollector } from "./resourceCollector";
+import { APIResourceFactory } from "@kubeframe/k8s/base/APIResourceFactory.js";
+import { ResourceCollector } from "./resourceCollector.js";
 
 export class YAMLFrame extends Frame {
 

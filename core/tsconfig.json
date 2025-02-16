@@ -1,7 +1,9 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
-        "target": "es5",
+        "lib": ["ESNext"],
+        "module": "NodeNext",
+        "target": "ESNext",
+        "moduleResolution": "Node16",
         "noImplicitAny": false,
         "sourceMap": false,
         "declaration": true,
@@ -11,7 +13,6 @@
         "outDir": "dist"
     },
     "exclude": [
-        "dist",
-        "k8s"
+        "dist"
     ]
 }

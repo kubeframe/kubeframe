@@ -1,11 +1,11 @@
 import { execSync } from 'child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import * as path from 'path';
-import { isEqual } from 'lodash';
+import _ from 'lodash';
 import { ClassDeclaration, Project, SourceFile, ts } from "ts-morph";
-import { chunkArray, formatComment, upperCaseFirstLetter } from './util';
+import { chunkArray, formatComment, upperCaseFirstLetter } from './util.js';
 import * as os from 'os';
-import { comparePropertyName, removeUnnecessaryQuotesFromPropertyName } from './typescriptHelpers';
+import { comparePropertyName, removeUnnecessaryQuotesFromPropertyName } from './typescriptHelpers.js';
 import { promises as fsPromises } from 'fs';
 
 export interface GroupVersionKind {
@@ -124,7 +124,7 @@ function preprocessKubernetesOpenApiSpecs(directory: string, state: GenerationSt
 
             if (schemaModelRemap[newName]) {
                 // As long as the bodies are equal, we can ignore the duplicate because they will end up being the same model
-                if (!isEqual(schemaModelRemap[newName].body, body)) {
+                if (!_.isEqual(schemaModelRemap[newName].body, body)) {
                     console.error(`Duplicate model name: ${newName} found in ${file} and ${schemaModelRemap[newName].fileName}`);
                 }
             }
@@ -225,7 +225,7 @@ function runOpenApiGenerator(inputDir: string, outputDir: string, tmpDir: string
                     output: outputDir,
                     additionalProperties: {
                         supportsES6: true,
-                        importFileExtension: "",
+                        importFileExtension: ".js",
                         modelPropertyNaming: "original",
                         platform: "node",
                         useObjectParameters: true
@@ -241,7 +241,7 @@ function runOpenApiGenerator(inputDir: string, outputDir: string, tmpDir: string
     writeFileSync(configPath, JSON.stringify(config, null, 4));
 
     execSync(`npm run openapi-generate -- --openapitools ${configPath}`, {
-        cwd: path.join(__dirname, '../'),
+        cwd: path.join(import.meta.dirname, '../'),
         stdio: 'inherit',
     });
 }
@@ -326,7 +326,7 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
 
         // Update the import paths
         const parts = importPath.split('/');
-        const baseName = parts[parts.length - 1].split('.')[0];
+        const [baseName, fileExt] = parts[parts.length - 1].split('.');
         const nameComponents = state.nameComponentsMapping.get(baseName);
         if (!nameComponents) {
             console.error(`Failed to find name components for: ${baseName}`);
@@ -339,10 +339,10 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
         }
 
         if (nameComponents[0] === group && nameComponents[1] === version) {
-            const newImportPath = `./${nameComponents[2]}`;
+            const newImportPath = `./${nameComponents[2]}.${fileExt}`;
             imp.setModuleSpecifier(newImportPath);
         } else {
-            const newImportPath = path.join('../../', ...nameComponents);
+            const newImportPath = path.join('../../', nameComponents[0], nameComponents[1], `${nameComponents[2]}.${fileExt}`);
             imp.setModuleSpecifier(newImportPath);
         }
 
@@ -415,7 +415,7 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
 
                 // Add APIResource or NamespacedAPIResource import
                 sourceFile.addImportDeclaration({
-                    moduleSpecifier: '../../base/APIResource',
+                    moduleSpecifier: '../../base/APIResource.js',
                     namedImports: [apiResourceProperties.isNamespaced ? 'NamespacedAPIResource' : 'APIResource'],
                 });
 
@@ -603,10 +603,10 @@ function createProjectStructure(outputDir: string, version: string) {
 
     const tsconfig = {
         "compilerOptions": {
-            "lib": ["ES2022"],
-            "target": "ES2022",
-            "module": "CommonJS",
-            "moduleResolution": "node10",
+            "lib": ["ESNext"],
+            "target": "ESNext",
+            "module": "NodeNext",
+            "moduleResolution": "Node16",
             "declaration": true,
             "strict": true,
             "skipLibCheck": true,
@@ -615,13 +615,16 @@ function createProjectStructure(outputDir: string, version: string) {
             "outDir": "dist",
             "rootDir": "src"
         },
+        "exclude": [
+            "dist"
+        ]
     };
 
     const tsconfigPath = path.join(outputDir, 'tsconfig.json');
     writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 4));
 
     // Get CLI package.json
-    const cliPackageJsonPath = path.join(__dirname, '../package.json');
+    const cliPackageJsonPath = path.join(import.meta.dirname, '../package.json');
     const cliPackageJson = JSON.parse(readFileSync(cliPackageJsonPath).toString());
 
     const packageJson = {
@@ -629,6 +632,7 @@ function createProjectStructure(outputDir: string, version: string) {
         // Use the same version as the CLI
         "version": cliPackageJson.version,
         "description": "Generated models for kubeframe",
+        "type": "module",
         "scripts": {
             "build": "rm -rf dist && tsc",
         },
@@ -677,11 +681,11 @@ function copyModels(modelsDir: string, outputDir: string) {
         mkdirSync(path.join(outputDir, 'base'), { recursive: true });
     }
 
-    const baseFiles = readdirSync(path.join(__dirname, 'base'))
+    const baseFiles = readdirSync(path.join(import.meta.dirname, 'base'))
         .filter(f => f.endsWith('.ts'));
 
     for (const file of baseFiles) {
-        copyFileSync(path.join(__dirname, 'base', file), path.join(outputDir, 'base', file));
+        copyFileSync(path.join(import.meta.dirname, 'base', file), path.join(outputDir, 'base', file));
     }
 }
 
@@ -717,7 +721,7 @@ function generateFactoryList(outputDir: string, factoryGenerationProperties: Fac
         const alternateName = prop.path.split('/').map(c => upperCaseFirstLetter(c)).join('');
 
         src.addImportDeclaration({
-            moduleSpecifier: `../${prop.path}`,
+            moduleSpecifier: `../${prop.path}.js`,
             namedImports: [`${prop.className} as ${alternateName}`],
         });
 

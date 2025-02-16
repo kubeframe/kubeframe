@@ -1,4 +1,4 @@
-import { CollectedResource, ResourceCollector } from "./resourceCollector";
+import { CollectedResource, ResourceCollector } from "./resourceCollector.js";
 import { mkdirSync, statSync, writeFileSync } from "fs";
 import * as YAML from "yaml";
 

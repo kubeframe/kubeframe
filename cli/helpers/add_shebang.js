@@ -1,4 +1,4 @@
-const fs = require('fs');
+import fs from 'fs';
 
 const file = process.argv[2]
 console.log(`Adding shebang to ${file}`);

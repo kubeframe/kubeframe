@@ -10,13 +10,14 @@ KubeFrame-CLI is a tool for generating Typescript classes and interfaces from Ku
 - Docker - Used for running the OpenAPI generator
 - Git - Used for fetching the OpenAPI specs from the Kubernetes repository
 
-### Installation
+### Usage
+
+#### Create a new project
 
 ```bash
-npm install -g kubeframe-cli
+# npx @kubeframe/cli create-project <project-name> --version=<k8s-version> 
+npx @kubeframe/cli create-project my-project --version=1.32
 ```
-
-### Usage
 
 #### Generate Kubernetes classes and interfaces
 

@@ -107,6 +107,8 @@ jobs:
         working-directory: ./core
         run: |
           jq '.dependencies["@kubeframe/k8s"] = "npm:@kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}@${{needs.release.outputs.cli_version}}"' package.json > tmp.json && mv tmp.json package.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git checkout -b update-core-package-version-${{needs.release.outputs.cli_version}}
           git add package.json
           git commit -m "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputs.cli_version}}"

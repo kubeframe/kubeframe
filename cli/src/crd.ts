@@ -4,8 +4,8 @@ import { compile } from 'json-schema-to-typescript';
 import path = require('path');
 import { Project, SyntaxKind } from 'ts-morph';
 import * as YAML from 'yaml';
-import { comparePropertyName, convertInterfaceToClass } from './typescriptHelpers';
-import { GroupVersionKind, groupVersionToString } from './kubernetes';
+import { comparePropertyName, convertInterfaceToClass } from './typescriptHelpers.js';
+import { GroupVersionKind, groupVersionToString } from './kubernetes.js';
 
 interface CRD {
     apiVersion: string;
