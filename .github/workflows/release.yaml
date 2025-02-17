@@ -117,5 +117,30 @@ jobs:
           git push origin update-core-package-version-${{needs.release.outputs.cli_version}}
           gh pr create --title "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputs.cli_version}}" --body "This PR updates the core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputs.cli_version}}" --base main --head update-core-package-version-${{needs.release.outputs.cli_version}}
     
-
+  publish-core:
+    needs:
+    - release
+    if: ${{ needs.publish-k8s.outputs.core_release_created }}
+    name: Build Core
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '22'
+        registry-url: 'https://registry.npmjs.org'
+    - name: Install dependencies
+      working-directory: ./core
+      run: npm ci
+    - name: Build
+      working-directory: ./core
+      run: npm run build
+    - name: Copy package.json
+      working-directory: ./core
+      run: cp ./package.json ./dist/package.json
+    - name: Publish
+      working-directory: ./core/dist
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npm publish --access public
   
