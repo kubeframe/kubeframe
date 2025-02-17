@@ -36,7 +36,6 @@ export class HelmFrame extends Frame {
         const docs = YAML.parseAllDocuments(output);
         for (const doc of docs) {
             const json = doc.toJSON();
-            console.log(json);
             const resource = apiFactory.createFromPlainJSON(json);
             resourceCollector.addResource({
                 frameName: this.name,
