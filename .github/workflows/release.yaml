@@ -120,7 +120,7 @@ jobs:
   publish-core:
     needs:
     - release
-    if: ${{ needs.publish-k8s.outputs.core_release_created }}
+    if: ${{ needs.release.outputs.core_release_created }}
     name: Build Core
     runs-on: ubuntu-latest
     steps:
