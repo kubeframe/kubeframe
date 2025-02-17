@@ -9,8 +9,7 @@
       },
       "core": {
         "package-name": "@kubeframe/core",
-        "release-type": "node",
-        "release-as":"0.1.0"
+        "release-type": "node"
       }
     }
   }
