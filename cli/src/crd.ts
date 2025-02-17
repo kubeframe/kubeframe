@@ -163,7 +163,19 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
                 ],
                 statements: [
                     `super('${groupVersionToString(groupVersionKind)}', '${groupVersionKind.kind}', args.metadata);`,
-                    `Object.assign(this, args);`,
+                    interfaceDeclaration.getProperties().map(p => {
+                        const name = p.getName();
+                        // Metadata is inherited from APIResource or NamespacedAPIResource and passed in via constructor
+                        if (!comparePropertyName(name, 'metadata')) {
+                            if (name.includes(`'`)) {
+                                return `this[${name}] = args[${name}];`;
+                            } else {
+                                return `this.${name} = args.${name};`;
+                            }
+                        }
+                    })
+                    .filter(statement => statement)
+                    .join('\n'),
                 ],
             });
         }

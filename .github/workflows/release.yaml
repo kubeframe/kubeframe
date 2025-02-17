@@ -104,6 +104,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Update Core Package Version
         if: ${{ matrix.versions == env.LATEST_KUBERNETES_VERSION }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         working-directory: ./core
         run: |
           jq '.dependencies["@kubeframe/k8s"] = "npm:@kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}@${{needs.release.outputs.cli_version}}"' package.json > tmp.json && mv tmp.json package.json
