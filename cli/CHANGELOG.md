@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/kubeframe/kubeframe/compare/cli-v0.2.0...cli-v0.2.1) (2025-02-17)
+
+
+### Bug Fixes
+
+* Create individual assignments for properties in CRD ctor, pass GH_TOKEN to create PR call ([af37d2c](https://github.com/kubeframe/kubeframe/commit/af37d2ca135edd9eec9b03fa833c0e724d9c47c4))
+
 ## [0.2.0](https://github.com/kubeframe/kubeframe/compare/cli-v0.1.8...cli-v0.2.0) (2025-02-16)
 
 
