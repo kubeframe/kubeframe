@@ -22,10 +22,9 @@ export class YAMLFrame extends Frame {
 
     async doBuild(resourceCollector: ResourceCollector) {
         const docs = YAML.parseAllDocuments(this.source);
-        const apiFactory = new APIResourceFactory();
         docs.forEach(doc => {
             const json = doc.toJSON();
-            const resource = apiFactory.createFromPlainJSON(json);
+            const resource = APIResourceFactory.createFromPlainJSON(json);
             resourceCollector.addResource({
                 frameName: this.name,
             }, resource);

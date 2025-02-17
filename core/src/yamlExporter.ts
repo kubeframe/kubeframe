@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 import { CollectedResource, ResourceCollector } from "./resourceCollector.js";
 import { resourceToYaml } from "./yaml.js";
-// import { KUBEFRAME_VERSION } from "@kubeframe/k8s/version";
+import { KUBEFRAME_KUBERNETES_VERSION } from "@kubeframe/k8s/version.js";
 
 export type ResourceFilter = (resource: CollectedResource) => boolean;
 
@@ -14,7 +14,7 @@ export class YAMLExporter {
         const yaml = resources
             .filter(filter || (() => true))
             .map(resource => {
-                return `# KUBEFRAME_VERSION: TEST\n# SOURCE: ${resource.sourceInfo.frameName}\n${resourceToYaml(resource.resource)}`;
+                return `# KUBEFRAME_VERSION: ${KUBEFRAME_KUBERNETES_VERSION}\n# SOURCE: ${resource.sourceInfo.frameName}\n${resourceToYaml(resource.resource)}`;
             })
             .join("---\n");
 

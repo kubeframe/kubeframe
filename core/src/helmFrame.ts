@@ -30,13 +30,11 @@ export class HelmFrame extends Frame {
         const buffer = execSync(`helm template ${this.options.releaseName} ${this.options.chart} ${this.options.options.join(' ')}`);
         const output = buffer.toString();
 
-        const apiFactory = new APIResourceFactory();
-
         // Parse the output
         const docs = YAML.parseAllDocuments(output);
         for (const doc of docs) {
             const json = doc.toJSON();
-            const resource = apiFactory.createFromPlainJSON(json);
+            const resource = APIResourceFactory.createFromPlainJSON(json);
             resourceCollector.addResource({
                 frameName: this.name,
             }, resource);
