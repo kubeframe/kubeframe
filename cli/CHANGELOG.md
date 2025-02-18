@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/kubeframe/kubeframe/compare/cli-v0.2.1...cli-v0.3.0) (2025-02-18)
+
+
+### Features
+
+* CRD factories, create project improvements, helm export ([5fa4331](https://github.com/kubeframe/kubeframe/commit/5fa433106b7419f78633bfa9e59e9d03598e254e))
+
 ## [0.2.1](https://github.com/kubeframe/kubeframe/compare/cli-v0.2.0...cli-v0.2.1) (2025-02-17)
 
 
