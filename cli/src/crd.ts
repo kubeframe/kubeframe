@@ -5,7 +5,8 @@ import path = require('path');
 import { Project, SyntaxKind } from 'ts-morph';
 import * as YAML from 'yaml';
 import { comparePropertyName, convertInterfaceToClass } from './typescriptHelpers.js';
-import { GroupVersionKind, groupVersionToString } from './kubernetes.js';
+import { GroupVersionKind, groupVersionKindToString, groupVersionToString } from './kubernetes.js';
+import { upperCaseFirstLetter } from './util.js';
 
 interface CRD {
     apiVersion: string;
@@ -94,7 +95,54 @@ async function generate(crd: CRD, output: string) {
         }
 
         writeFileSync(path.join(groupVersionDir, `${crd.spec.names.kind}.ts`), modified);
+
+        createOrUpdateCRDAPIResourceFactory(output, groupVersionKind);
     }
+}
+
+function createOrUpdateCRDAPIResourceFactory(output: string, groupVersionKind: GroupVersionKind) {
+    const factoryFile = path.join(output, 'CRDFactory.ts');
+    if (!existsSync(factoryFile)) {
+        writeFileSync(factoryFile, createAPIResourceFactory());
+    }
+    
+    updateAPIResourceFactory(factoryFile, groupVersionKind);
+}
+
+function createAPIResourceFactory(): string {
+    return `
+import { APIResourceFactory } from '@kubeframe/k8s/base/APIResourceFactory.js'
+export function registerCRDs() {
+    
+}
+`;
+}
+
+function fullAliasFromGroupVersionKind(groupVersionKind: GroupVersionKind): string {
+    const groupParts = groupVersionKind.group.split('.');
+    const versionParts = groupVersionKind.version.split('.');
+    const kindParts = groupVersionKind.kind.split('.');
+
+    return [...groupParts, ...versionParts, ...kindParts].map(p => upperCaseFirstLetter(p)).join('');
+}
+
+function updateAPIResourceFactory(file: string, groupVersionKind: GroupVersionKind) {
+    const project = new Project();
+    const sourceFile = project.addSourceFileAtPath(file);
+
+    const alias = fullAliasFromGroupVersionKind(groupVersionKind);
+
+    sourceFile.addImportDeclaration({
+        moduleSpecifier: `./${groupVersionKind.group}/${groupVersionKind.version}/${groupVersionKind.kind}.js`,
+        namedImports: [`${groupVersionKind.kind} as ${alias}`]
+    });
+
+    const registerCRDs = sourceFile.getFunction('registerCRDs');
+    if (registerCRDs) {
+        registerCRDs.addStatements(`APIResourceFactory.registerResource('${groupVersionKindToString(groupVersionKind)}', ${alias});`);
+    }
+
+    project.saveSync();
 }
 
 function transformTSSource(source: string, groupVersionKind: GroupVersionKind, namespaced: boolean): string {
@@ -104,12 +152,12 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
 
     // ObjectMeta import
     sourceFile.addImportDeclaration({
-        moduleSpecifier: '@kubeframe/k8s/meta/v1/ObjectMeta',
+        moduleSpecifier: '@kubeframe/k8s/meta/v1/ObjectMeta.js',
         namedImports: [namespaced ? 'NamespacedObjectMeta' : 'ObjectMeta']
     });
 
     sourceFile.addImportDeclaration({
-        moduleSpecifier: '@kubeframe/core/apiResource',
+        moduleSpecifier: '@kubeframe/k8s/base/APIResource.js',
         namedImports: [namespaced ? 'NamespacedAPIResource' : 'APIResource']
     });
 
@@ -143,6 +191,9 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
         const interfaceName = interfaceDeclaration.getName();
         const newInterfaceName = interfaceName + 'Args';
         interfaceDeclaration.rename(newInterfaceName);
+
+        interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'apiVersion'))?.remove();
+        interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'kind'))?.remove();
 
         const modelClass = convertInterfaceToClass(sourceFile, newInterfaceName, interfaceName);
         if (modelClass) {
@@ -179,9 +230,6 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
                 ],
             });
         }
-
-        interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'apiVersion'))?.remove();
-        interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'kind'))?.remove();
     }
 
     return sourceFile.getText();

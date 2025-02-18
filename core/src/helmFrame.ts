@@ -17,12 +17,9 @@ export class HelmFrame extends Frame {
 
     constructor(private name: string, private options: HelmOptions) {
         super();
-        console.log('HelmFrame constructor');
     }
 
-    async doPreBuild() {
-        console.log('HelmFrame doPreBuild');
-    }
+    async doPreBuild() { }
 
     async doBuild(resourceCollector: ResourceCollector) {
 
@@ -41,8 +38,5 @@ export class HelmFrame extends Frame {
         }
     }
 
-    async doPostBuild() {
-        console.log('HelmFrame doPostBuild');
-    }
-    
+    async doPostBuild() { }
 }

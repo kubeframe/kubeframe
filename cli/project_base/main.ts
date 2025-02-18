@@ -1,7 +1,7 @@
-import { ConfigMap } from '@kubeframe/k8s/core/v1/ConfigMap';
-import { Frame } from '@kubeframe/core/frame';
-import { ResourceCollector } from '@kubeframe/core/resourceCollector';
-import { YAMLExporter } from '@kubeframe/core/yamlExporter';
+import { ConfigMap } from '@kubeframe/k8s/core/v1/ConfigMap.js';
+import { Frame } from '@kubeframe/core/frame.js';
+import { ResourceCollector } from '@kubeframe/core/resourceCollector.js';
+import { YAMLExporter } from '@kubeframe/core/yamlExporter.js';
 
 export class ApplicationFrame extends Frame {
     constructor() {
@@ -14,7 +14,11 @@ export class ApplicationFrame extends Frame {
     }
 
     async doBuild(resourceCollector: ResourceCollector) {
-        const configMap = new ConfigMap('my-configmap', {
+        const configMap = new ConfigMap({
+            metadata: {
+                name: 'my-configmap',
+                namespace: 'default',
+            },
             data: {
                 'key1': 'value1',
                 'key2': 'value2',
@@ -42,3 +46,5 @@ async function run() {
 
     console.log(yaml);
 }
+
+run();

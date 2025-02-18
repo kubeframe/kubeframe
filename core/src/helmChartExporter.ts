@@ -1,12 +1,33 @@
-import { CollectedResource, ResourceCollector } from "./resourceCollector.js";
+import * as path from "path";
+import { APIResource, NamespacedAPIResource } from "@kubeframe/k8s/base/APIResource.js";
+import { CollectedResource, ResourceCollector, ResourceFilter } from "./resourceCollector.js";
 import { mkdirSync, statSync, writeFileSync } from "fs";
 import * as YAML from "yaml";
+import { resourceToYaml } from "./yaml.js";
+import { YAMLExporter } from "./yamlExporter.js";
 
 export type TemplateNameBulder = (resource: CollectedResource) => string;
 
+function fsFriendlyApiVersion(apiVersion: string): string {
+    return apiVersion
+        .replace('/', '_')
+        .replace('.', '_')
+        .toLowerCase();
+}
+
 function defaultTemplateNameBuilder(resource: CollectedResource): string {
-    // Use _ because - is a valid character in the name
-    return `${resource.sourceInfo.frameName.toLocaleLowerCase()}_${resource.resource.kind.toLowerCase()}_${resource.resource.metadata.name}.yaml`;
+    // Use double _ (__) as name component delimiter
+    // For dots in apiVersion, we use single _ as delimiter
+    let fileName = `${fsFriendlyApiVersion(resource.resource.apiVersion)}__${resource.resource.kind.toLowerCase()}`;
+    if (isNamespacedAPIResource(resource.resource)) {
+        fileName += `__${resource.resource.metadata.namespace}`;
+    }
+
+    return fileName + `__${resource.resource.metadata.name}.yaml`;
+}
+
+function isNamespacedAPIResource(resource: APIResource): resource is NamespacedAPIResource {
+    return resource instanceof NamespacedAPIResource;
 }
 
 export interface ChartExportOptions {
@@ -14,6 +35,7 @@ export interface ChartExportOptions {
     version: string;
     description?: string;
     separateFiles: boolean;
+    templateNameBuilder?: TemplateNameBulder;
 }
 
 export class HelmChartExporter {
@@ -23,7 +45,7 @@ export class HelmChartExporter {
         private options: ChartExportOptions,
     ) {}
 
-    export(outputDir: string) {
+    export(outputDir: string, resourceFilter?: ResourceFilter) {
         const chartDir = `${outputDir}/${this.options.chartName}`;
         const templatesDir = `${chartDir}/templates`;
         const chart = {
@@ -40,8 +62,29 @@ export class HelmChartExporter {
 
         // Save the chart.yaml
         writeFileSync(`${chartDir}/Chart.yaml`, YAML.stringify(chart));
-        
+
         // Export all resources
-        
+        if (this.options.separateFiles) {
+            this.exportSeparateFiles(templatesDir, resourceFilter);
+        } else {
+            this.exportSingleFile(templatesDir, resourceFilter);
+        }
+    }
+
+    private exportSeparateFiles(templatesDir: string, resourceFilter?: ResourceFilter) {
+        for (const resource of this.resourceCollector.getResources(resourceFilter)) {
+
+            const fileName = this.options.templateNameBuilder
+                ? this.options.templateNameBuilder(resource)
+                : defaultTemplateNameBuilder(resource);
+            
+            writeFileSync(path.join(templatesDir, fileName), resourceToYaml(resource.resource));
+        }
+    }
+
+    private exportSingleFile(templatesDir: string, resourceFilter?: ResourceFilter) {
+        const yamlExporter = new YAMLExporter(this.resourceCollector);
+        const resourcesYaml = yamlExporter.export(resourceFilter);
+        writeFileSync(path.join(templatesDir, 'all.yaml'), resourcesYaml);
     }
 }

@@ -8,14 +8,12 @@ export class APIResourceFactory {
         
     ]);
 
-    static registerFactories(factories: [string, FactoryFunction][]) {
-        for (const [key, value] of factories) {
-            if (APIResourceFactory.mapping.has(key)) {
-                console.info(`Factory for ${key} already registered, skipping`);
-            }
-
-            APIResourceFactory.mapping.set(key, value);
+    static registerResource(key: string, factory: FactoryFunction) {
+        if (APIResourceFactory.mapping.has(key)) {
+            console.info(`Factory for ${key} already registered, skipping`);
         }
+
+        APIResourceFactory.mapping.set(key, factory);
     }
 
     static createFromPlainJSON(json: any): APIResource {

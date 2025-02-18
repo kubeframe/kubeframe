@@ -1,9 +1,7 @@
 import { writeFileSync } from "fs";
-import { CollectedResource, ResourceCollector } from "./resourceCollector.js";
+import { ResourceCollector, ResourceFilter } from "./resourceCollector.js";
 import { resourceToYaml } from "./yaml.js";
 import { KUBEFRAME_KUBERNETES_VERSION } from "@kubeframe/k8s/version.js";
-
-export type ResourceFilter = (resource: CollectedResource) => boolean;
 
 export class YAMLExporter {
     

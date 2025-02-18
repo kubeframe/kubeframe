@@ -10,6 +10,8 @@ export interface CollectedResource {
     resource: APIResource;
 }
 
+export type ResourceFilter = (resource: CollectedResource) => boolean;
+
 export class ResourceCollector {
 
     private resources: CollectedResource[] = [];
@@ -21,7 +23,7 @@ export class ResourceCollector {
         });
     }
 
-    getResources(): CollectedResource[] {
-        return this.resources;
+    getResources(filter?: ResourceFilter): CollectedResource[] {
+        return this.resources.filter(filter || (() => true));
     }
 }

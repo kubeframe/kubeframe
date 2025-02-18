@@ -1,10 +1,15 @@
-import { copyFileSync, mkdirSync, writeFileSync } from "fs";
+import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import * as latestVersion from 'latest-version';
 
 export async function createProject(name: string, version: string) {
     console.info(`Creating project '${name}' with Kubernetes version ${version}`);
 
     const projectDir = `./${name}`;
+
+    if (existsSync(projectDir)) {
+        console.error(`Directory '${name}' already exists, aborting`);
+        return;
+    }
     
     // Create project directory
     mkdirSync(projectDir);
@@ -26,6 +31,7 @@ export async function createProject(name: string, version: string) {
         type: 'module',
         scripts: {
             build: 'rm -rf ./dist && tsc',
+            start: 'node dist/main.js',
         },
         dependencies: {
             "@kubeframe/core": `~${latestCoreVersion}`,
@@ -63,5 +69,9 @@ export async function createProject(name: string, version: string) {
     writeFileSync(`${projectDir}/tsconfig.json`, JSON.stringify(tsconfig, null, 4));
 
     // Copy main.ts from project_base
-    copyFileSync(`${import.meta.dirname}/../project_base/main.ts`, `${projectDir}/src/main.ts`);
+    copyFileSync(`${import.meta.dirname}/project_base/main.ts`, `${projectDir}/src/main.ts`);
+
+    console.info(`Project '${name}' created`);
+    console.info(`To build the project, run 'cd ${name} && npm install && npm run build'`);
+    console.info(`To run the project, run 'npm start'`);
 }
