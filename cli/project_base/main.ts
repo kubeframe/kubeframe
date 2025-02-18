@@ -6,12 +6,9 @@ import { YAMLExporter } from '@kubeframe/core/yamlExporter.js';
 export class ApplicationFrame extends Frame {
     constructor() {
         super();
-        console.log('ApplicationFrame constructor');
     }
 
-    async doPreBuild() {
-        console.log('ApplicationFrame doPreBuild');
-    }
+    async doPreBuild() { }
 
     async doBuild(resourceCollector: ResourceCollector) {
         const configMap = new ConfigMap({
@@ -29,9 +26,7 @@ export class ApplicationFrame extends Frame {
         }, configMap);
     }
 
-    async doPostBuild() {
-        console.log('ApplicationFrame doPostBuild');
-    }
+    async doPostBuild() { }
 }
 
 async function run() {
