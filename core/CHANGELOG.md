@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/kubeframe/kubeframe/compare/core-v0.1.2...core-v0.2.0) (2025-02-18)
+
+
+### Features
+
+* CRD factories, create project improvements, helm export ([5fa4331](https://github.com/kubeframe/kubeframe/commit/5fa433106b7419f78633bfa9e59e9d03598e254e))
+
 ## [0.1.2](https://github.com/kubeframe/kubeframe/compare/core-v0.1.1...core-v0.1.2) (2025-02-17)
 
 
