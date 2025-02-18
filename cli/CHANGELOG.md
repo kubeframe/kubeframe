@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/kubeframe/kubeframe/compare/cli-v0.3.0...cli-v0.3.1) (2025-02-18)
+
+
+### Bug Fixes
+
+* Require node 22 and remove logs from project base ([411f817](https://github.com/kubeframe/kubeframe/commit/411f81723c47c1a00aa39db71c733a3dc46d3f5b))
+
 ## [0.3.0](https://github.com/kubeframe/kubeframe/compare/cli-v0.2.1...cli-v0.3.0) (2025-02-18)
 
 
