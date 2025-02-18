@@ -115,7 +115,7 @@ jobs:
           git add package.json
           git commit -m "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputs.cli_version}}"
           git push origin update-core-package-version-${{needs.release.outputs.cli_version}}
-          gh pr create --title "chore: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputs.cli_version}}" --body "This PR updates the core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputs.cli_version}}" --base main --head update-core-package-version-${{needs.release.outputs.cli_version}}
+          gh pr create --title "deps: Update core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputs.cli_version}}" --body "This PR updates the core package @kubeframe/k8s dependency to @kubeframe/k8s-${{env.LATEST_KUBERNETES_VERSION}}:${{needs.release.outputs.cli_version}}" --base main --head update-core-package-version-${{needs.release.outputs.cli_version}}
     
   publish-core:
     needs:
