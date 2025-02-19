@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/kubeframe/kubeframe/compare/cli-v0.3.1...cli-v0.3.2) (2025-02-19)
+
+
+### Fixes
+
+* Split project_base main.ts into two to support library creation out of the box this way ApplicationFrame can be imported without running app ([47b5ce7](https://github.com/kubeframe/kubeframe/commit/47b5ce7a58a409aa93186f88ec48d7d64d3d54c1))
+
 ## [0.3.1](https://github.com/kubeframe/kubeframe/compare/cli-v0.3.0...cli-v0.3.1) (2025-02-18)
 
 
