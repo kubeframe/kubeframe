@@ -2,6 +2,23 @@
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/refs/heads/main/schemas/config.json",
     "release-type": "manifest",
     "bump-minor-pre-major": true,
+    "changelog-sections": [
+      {
+        "type": "feat",
+        "hidden": false,
+        "section": "Features"
+      },
+      {
+        "type": "fix",
+        "hidden": false,
+        "section": "Fixes"
+      },
+      {
+        "type": "deps",
+        "hidden": false,
+        "section": "Dependencies"
+      }
+    ],
     "packages": {
       "cli": {
         "package-name": "@kubeframe/cli",

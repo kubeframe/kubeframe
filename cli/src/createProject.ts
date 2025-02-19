@@ -68,8 +68,9 @@ export async function createProject(name: string, version: string) {
 
     writeFileSync(`${projectDir}/tsconfig.json`, JSON.stringify(tsconfig, null, 4));
 
-    // Copy main.ts from project_base
+    // Copy main.ts and application.ts from project_base
     copyFileSync(`${import.meta.dirname}/project_base/main.ts`, `${projectDir}/src/main.ts`);
+    copyFileSync(`${import.meta.dirname}/project_base/application.ts`, `${projectDir}/src/application.ts`);
 
     console.info(`Project '${name}' created`);
     console.info(`To build the project, run 'cd ${name} && npm install && npm run build'`);
