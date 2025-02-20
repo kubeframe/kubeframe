@@ -51,3 +51,7 @@ export class NamespacedAPIResource extends APIResource<NamespacedObjectMeta> {
         return `${this.apiVersion}/${this.kind}/${this.metadata.namespace}/${this.metadata.name}`;
     }
 }
+
+export function isNamespacedAPIResource(resource: APIResource): resource is NamespacedAPIResource {
+    return resource instanceof NamespacedAPIResource;
+}

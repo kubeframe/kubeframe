@@ -5,6 +5,18 @@
   "scripts": {
     "build": "rm -rf dist && tsc"
   },
+  "keywords": [
+    "kubernetes",
+    "openapi",
+    "typescript",
+    "cli"
+  ],
+  "author": "kubeframe",
+  "homepage": "https://github.com/kubeframe/kubeframe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kubeframe/kubeframe.git"
+  },
   "dependencies": {
     "endent": "^2.1.0",
     "yaml": "^2.7.0",

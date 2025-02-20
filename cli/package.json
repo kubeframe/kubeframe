@@ -8,8 +8,19 @@
     "add_shebang": "node ./helpers/add_shebang.js dist/main.js",
     "openapi-generate": "openapi-generator-cli generate"
   },
+  "keywords": [
+    "kubernetes",
+    "openapi",
+    "typescript",
+    "cli"
+  ],
   "type": "module",
-  "author": "",
+  "author": "kubeframe",
+  "homepage": "https://github.com/kubeframe/kubeframe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kubeframe/kubeframe.git"
+  },
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.12.0"

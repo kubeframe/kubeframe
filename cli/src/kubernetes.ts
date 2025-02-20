@@ -633,6 +633,11 @@ function createProjectStructure(outputDir: string, version: string) {
         "version": cliPackageJson.version,
         "description": "Generated models for kubeframe",
         "type": "module",
+        "homepage": "https://github.com/kubeframe/kubeframe",
+        "repository": {
+            "type": "git",
+            "url": "git+https://github.com/kubeframe/kubeframe.git"
+        },
         "scripts": {
             "build": "rm -rf dist && tsc",
         },
