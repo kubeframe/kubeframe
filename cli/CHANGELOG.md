@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/kubeframe/kubeframe/compare/cli-v0.3.2...cli-v0.3.3) (2025-02-20)
+
+
+### Fixes
+
+* Add info to package.json ([cfd8a1c](https://github.com/kubeframe/kubeframe/commit/cfd8a1ce08242609e5d750ed4db21c1e8d47d7e6))
+
 ## [0.3.2](https://github.com/kubeframe/kubeframe/compare/cli-v0.3.1...cli-v0.3.2) (2025-02-19)
 
 
