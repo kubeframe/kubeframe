@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/kubeframe/kubeframe/compare/core-v0.2.0...core-v0.2.1) (2025-02-20)
+
+
+### Fixes
+
+* Add info to package.json ([cfd8a1c](https://github.com/kubeframe/kubeframe/commit/cfd8a1ce08242609e5d750ed4db21c1e8d47d7e6))
+
 ## [0.2.0](https://github.com/kubeframe/kubeframe/compare/core-v0.1.2...core-v0.2.0) (2025-02-18)
 
 
