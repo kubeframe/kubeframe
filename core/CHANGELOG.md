@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/kubeframe/kubeframe/compare/core-v0.2.2...core-v0.2.3) (2025-02-20)
+
+
+### Fixes
+
+* Fix package json and include npm install in deps update ([49b3c07](https://github.com/kubeframe/kubeframe/commit/49b3c07cd908f28fe63e61a8da94fb300bf3d32e))
+
 ## [0.2.2](https://github.com/kubeframe/kubeframe/compare/core-v0.2.1...core-v0.2.2) (2025-02-20)
 
 
