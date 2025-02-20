@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2](https://github.com/kubeframe/kubeframe/compare/core-v0.2.1...core-v0.2.2) (2025-02-20)
+
+
+### Fixes
+
+* Add index.ts update lock ([beb8ccb](https://github.com/kubeframe/kubeframe/commit/beb8ccbbc4b7df03e57e03da1c9caab7d96d8fa4))
+
+
+### Dependencies
+
+* Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:0.3.3 ([5e05c50](https://github.com/kubeframe/kubeframe/commit/5e05c50e0ea9cf09c7abab0bf1224af4092ec422))
+
 ## [0.2.1](https://github.com/kubeframe/kubeframe/compare/core-v0.2.0...core-v0.2.1) (2025-02-20)
 
 
