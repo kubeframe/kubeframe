@@ -638,6 +638,10 @@ function createProjectStructure(outputDir: string, version: string) {
             "type": "git",
             "url": "git+https://github.com/kubeframe/kubeframe.git"
         },
+        "exports": {
+            ".": "./dist/index.js",
+            "./version": "./dist/version.js"
+        },
         "scripts": {
             "build": "rm -rf dist && tsc",
         },
