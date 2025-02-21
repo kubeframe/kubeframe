@@ -1,4 +1,4 @@
-import { APIResource } from "@kubeframe/k8s/base/APIResource.js";
+import { APIResource } from "@kubeframe/k8s/base";
 
 export interface SourceInfo {
     frameName: string;
