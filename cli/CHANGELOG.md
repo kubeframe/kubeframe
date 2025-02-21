@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.4.0](https://github.com/kubeframe/kubeframe/compare/cli-v0.3.3...cli-v0.4.0) (2025-02-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* Improved importing flow
+
+### Features
+
+* Improved importing flow ([85cd5c0](https://github.com/kubeframe/kubeframe/commit/85cd5c03e007f58fe11018436043ad5064d0b515))
+
 ## [0.3.3](https://github.com/kubeframe/kubeframe/compare/cli-v0.3.2...cli-v0.3.3) (2025-02-20)
 
 
