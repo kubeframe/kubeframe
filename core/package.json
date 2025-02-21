@@ -11,6 +11,12 @@
     "typescript",
     "cli"
   ],
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files":[
+    "dist/**"
+  ],
   "author": "kubeframe",
   "homepage": "https://github.com/kubeframe/kubeframe",
   "repository": {

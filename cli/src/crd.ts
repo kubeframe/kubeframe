@@ -1,12 +1,13 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { compile } from 'json-schema-to-typescript';
 import path = require('path');
-import { Project, SyntaxKind } from 'ts-morph';
+import { Project, PropertyAssignment, SyntaxKind, ts, VariableDeclarationKind } from 'ts-morph';
 import * as YAML from 'yaml';
-import { comparePropertyName, convertInterfaceToClass } from './typescriptHelpers.js';
+import { addToIndexImportTree, comparePropertyName, convertInterfaceToClass } from './typescriptHelpers.js';
 import { GroupVersionKind, groupVersionKindToString, groupVersionToString } from './kubernetes.js';
 import { upperCaseFirstLetter } from './util.js';
+import { group } from 'console';
 
 interface CRD {
     apiVersion: string;
@@ -89,13 +90,14 @@ async function generate(crd: CRD, output: string) {
         console.info(`Generating ${groupVersionKind.kind} for ${groupVersionKind.group}/${groupVersionKind.version}`);
         const modified = transformTSSource(source, groupVersionKind, crd.spec.scope === 'Namespaced');
 
-        const groupVersionDir = path.join(output, crd.spec.group, version.name);
+        const groupVersionDir = path.join(output, ...groupVersionKind.group.split('.'), groupVersionKind.version);
         if (!existsSync(groupVersionDir)) {
             mkdirSync(groupVersionDir, { recursive: true });
         }
 
-        writeFileSync(path.join(groupVersionDir, `${crd.spec.names.kind}.ts`), modified);
+        writeFileSync(path.join(groupVersionDir, `${groupVersionKind.kind}.ts`), modified);
 
+        addToIndexImportTree('crds', output, [...groupVersionKind.group.split('.'), groupVersionKind.version, groupVersionKind.kind]);
         createOrUpdateCRDAPIResourceFactory(output, groupVersionKind);
     }
 }
@@ -112,34 +114,22 @@ function createOrUpdateCRDAPIResourceFactory(output: string, groupVersionKind: G
 function createAPIResourceFactory(): string {
     return `
 import { APIResourceFactory } from '@kubeframe/k8s/base/APIResourceFactory.js'
+import * as crds from './index.js';
 export function registerCRDs() {
     
 }
 `;
 }
 
-function fullAliasFromGroupVersionKind(groupVersionKind: GroupVersionKind): string {
-    const groupParts = groupVersionKind.group.split('.');
-    const versionParts = groupVersionKind.version.split('.');
-    const kindParts = groupVersionKind.kind.split('.');
-
-    return [...groupParts, ...versionParts, ...kindParts].map(p => upperCaseFirstLetter(p)).join('');
-}
-
 function updateAPIResourceFactory(file: string, groupVersionKind: GroupVersionKind) {
     const project = new Project();
     const sourceFile = project.addSourceFileAtPath(file);
 
-    const alias = fullAliasFromGroupVersionKind(groupVersionKind);
-
-    sourceFile.addImportDeclaration({
-        moduleSpecifier: `./${groupVersionKind.group}/${groupVersionKind.version}/${groupVersionKind.kind}.js`,
-        namedImports: [`${groupVersionKind.kind} as ${alias}`]
-    });
+    const alias = ['crds', groupVersionKind.group, groupVersionKind.version, groupVersionKind.kind].join('.');
 
     const registerCRDs = sourceFile.getFunction('registerCRDs');
     if (registerCRDs) {
-        registerCRDs.addStatements(`APIResourceFactory.registerResource('${groupVersionKindToString(groupVersionKind)}', ${alias});`);
+        registerCRDs.addStatements(`APIResourceFactory.registerResource('${groupVersionKindToString(groupVersionKind)}', (json: any) => new ${alias}(json));`);
     }
 
     project.saveSync();

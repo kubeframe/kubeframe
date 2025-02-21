@@ -1,4 +1,5 @@
 import { APIResource } from "./APIResource.js";
+import * as k8s from "../index.js";
 
 export type FactoryFunction = (json: unknown) => APIResource;
 

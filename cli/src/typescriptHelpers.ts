@@ -1,4 +1,6 @@
-import { SourceFile } from "ts-morph";
+import { existsSync, readFileSync, writeFileSync } from "fs";
+import path from "path";
+import { Project, SourceFile } from "ts-morph";
 
 export function comparePropertyName(a: string, b: string) {
     return a === b || a === `'${b}'` || a === `"${b}"`;
@@ -34,4 +36,44 @@ export function removeUnnecessaryQuotesFromPropertyName(name: string): string {
         return witoutQuotes; // No quotes needed
     }
     return `'${witoutQuotes}'`; // Keep quotes if it's not a valid identifier
+}
+
+export function addToIndexImportTree(moduleName: string, outpurDir: string, importTree: string[]) {
+    let parentName = moduleName;
+    let parentPath = outpurDir;
+    for (let i = 0; i < importTree.length; i++) {
+        const project = new Project();
+
+        const sourcePath = path.join(parentPath, "index.ts");
+        const fileExists = existsSync(sourcePath);
+        const source = project.createSourceFile(parentPath, fileExists ? readFileSync(sourcePath, 'utf8') : '');
+
+        const isLast = i === importTree.length - 1;
+
+        const moduleSpecifier = isLast ? `./${importTree[i]}.js` : `./${importTree[i]}/index.js`;
+        const hasImport = source.getImportDeclarations().find(id => id.getModuleSpecifierValue() === moduleSpecifier);
+        
+        if (!hasImport) {
+            source.addImportDeclaration({
+                moduleSpecifier: isLast ? `./${importTree[i]}.js` : `./${importTree[i]}/index.js`,
+                namespaceImport: !isLast ? importTree[i] : undefined,
+                namedImports: isLast ? [importTree[i]] : undefined
+            });
+        }
+
+        const exportDeclaration = source.getExportDeclaration(() => true);
+        if (!exportDeclaration) {
+            source.addExportDeclaration({
+                namedExports: [importTree[i]]
+            });
+        } else {
+            if (!exportDeclaration.getNamedExports().find(ne => ne.getName() === importTree[i])) {
+                exportDeclaration.addNamedExport(importTree[i]);
+            }
+        }
+        
+        writeFileSync(sourcePath, source.getText());
+        parentPath = path.join(parentPath, importTree[i]);
+        parentName = importTree[i];
+    }
 }

@@ -15,6 +15,7 @@
     "exclude": [
         "base",
         "dist",
-        "project_base"
+        "project_base",
+        "test"
     ]
 }

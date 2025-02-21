@@ -1,6 +1,5 @@
-import { ConfigMap } from '@kubeframe/k8s/core/v1/ConfigMap.js';
-import { Frame } from '@kubeframe/core/frame.js';
-import { ResourceCollector } from '@kubeframe/core/resourceCollector.js';
+import * as k8s from '@kubeframe/k8s';
+import { Frame, ResourceCollector } from '@kubeframe/core';
 
 export class ApplicationFrame extends Frame {
     constructor() {
@@ -10,7 +9,7 @@ export class ApplicationFrame extends Frame {
     async doPreBuild() { }
 
     async doBuild(resourceCollector: ResourceCollector) {
-        const configMap = new ConfigMap({
+        const configMap = new k8s.core.v1.ConfigMap({
             metadata: {
                 name: 'my-configmap',
                 namespace: 'default',

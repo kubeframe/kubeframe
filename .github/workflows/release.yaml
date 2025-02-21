@@ -90,11 +90,8 @@ jobs:
       - name: Build
         working-directory: ./k8s
         run: npm run build
-      - name: Copy package.json
-        working-directory: ./k8s
-        run: cp ./package.json ./dist/package.json
       - name: Publish
-        working-directory: ./k8s/dist
+        working-directory: ./k8s
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public
@@ -136,11 +133,8 @@ jobs:
     - name: Build
       working-directory: ./core
       run: npm run build
-    - name: Copy package.json
-      working-directory: ./core
-      run: cp ./package.json ./dist/package.json
     - name: Publish
-      working-directory: ./core/dist
+      working-directory: ./core
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: npm publish --access public

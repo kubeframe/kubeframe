@@ -5,7 +5,7 @@ import _ from 'lodash';
 import { ClassDeclaration, Project, SourceFile, ts } from "ts-morph";
 import { chunkArray, formatComment, upperCaseFirstLetter } from './util.js';
 import * as os from 'os';
-import { comparePropertyName, removeUnnecessaryQuotesFromPropertyName } from './typescriptHelpers.js';
+import { addToIndexImportTree, comparePropertyName, removeUnnecessaryQuotesFromPropertyName } from './typescriptHelpers.js';
 import { promises as fsPromises } from 'fs';
 
 export interface GroupVersionKind {
@@ -668,7 +668,8 @@ function copyModels(modelsDir: string, outputDir: string) {
 
     const files = readdirSync(modelsDir, { recursive: true })
         .map(f => f.toString())
-        .filter(f => f.endsWith('.ts'));
+        // Only files which are not in api/ or util/ directories and are .ts files
+        .filter(f => f.endsWith('.ts') && !f.startsWith('api/') && !f.startsWith('util/'));
 
     const uniqueDirs = new Set(files.map(f => path.dirname(f)));
     for (const dir of uniqueDirs) {
@@ -677,7 +678,10 @@ function copyModels(modelsDir: string, outputDir: string) {
         }
     }
 
+    const fileGroupVersionKinds: string[][] = []
+
     for (const file of files) {
+        fileGroupVersionKinds.push(file.replace('.ts', '').split('/'));
         copyFileSync(path.join(modelsDir, file), path.join(outputDir, file));
     }
 
@@ -690,8 +694,17 @@ function copyModels(modelsDir: string, outputDir: string) {
         .filter(f => f.endsWith('.ts'));
 
     for (const file of baseFiles) {
-        copyFileSync(path.join(import.meta.dirname, 'base', file), path.join(outputDir, 'base', file));
+        const fullPath = path.join('base', file);
+        const destPath = path.join(outputDir, 'base', file);
+        fileGroupVersionKinds.push(fullPath.replace('.ts', '').split('/'));
+        console.info(`Copying base file: ${fullPath} to ${destPath}`);
+        copyFileSync(path.join(import.meta.dirname, fullPath), destPath);
     }
+
+    fileGroupVersionKinds.map(e => {
+        console.info(`Adding to index import tree: ${e}`);
+        addToIndexImportTree('k8s', outputDir, e)
+    });
 }
 
 function buildProject(outputDir: string) {
@@ -722,16 +735,9 @@ function generateFactoryList(outputDir: string, factoryGenerationProperties: Fac
     }
 
     factoryGenerationProperties.forEach(prop => {
-        // There could be multiple classes with the same name but different group/version/kind
-        const alternateName = prop.path.split('/').map(c => upperCaseFirstLetter(c)).join('');
-
-        src.addImportDeclaration({
-            moduleSpecifier: `../${prop.path}.js`,
-            namedImports: [`${prop.className} as ${alternateName}`],
-        });
-
+        const fullName = ['k8s', ...prop.path.split('/')].join('.');
         mappingProperty.getFirstDescendantByKind(ts.SyntaxKind.ArrayLiteralExpression)
-            ?.insertElement(0, `['${groupVersionKindToString(prop.groupVersionKind)}', (json: any) => new ${alternateName}(json)]\n`);
+            ?.insertElement(0, `['${groupVersionKindToString(prop.groupVersionKind)}', (json: any) => new ${fullName}(json)]\n`);
     });
 
     writeFileSync(path.join(outputDir, 'base', 'APIResourceFactory.ts'), src.getText());
