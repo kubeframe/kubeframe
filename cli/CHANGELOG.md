@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.2...cli-v0.4.3) (2025-02-21)
+
+
+### Fixes
+
+* Export decl was removed accidentally ([9911817](https://github.com/kubeframe/kubeframe/commit/9911817544a3b5625ed5f9a492c186d0c19e9c05))
+
 ## [0.4.2](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.1...cli-v0.4.2) (2025-02-21)
 
 
