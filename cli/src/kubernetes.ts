@@ -640,7 +640,8 @@ function createProjectStructure(outputDir: string, version: string) {
         },
         "exports": {
             ".": "./dist/index.js",
-            "./version": "./dist/version.js"
+            "./version": "./dist/version.js",
+            "./base": "./dist/base/index.js",
         },
         "scripts": {
             "build": "rm -rf dist && tsc",

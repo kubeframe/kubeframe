@@ -38,7 +38,7 @@ export function removeUnnecessaryQuotesFromPropertyName(name: string): string {
     return `'${witoutQuotes}'`; // Keep quotes if it's not a valid identifier
 }
 
-export function addToIndexImportTree(moduleName: string, outpurDir: string, importTree: string[]) {
+function addToIndexImportTree(moduleName: string, outpurDir: string, importTree: string[]) {
     let parentName = moduleName;
     let parentPath = outpurDir;
     for (let i = 0; i < importTree.length; i++) {
@@ -50,25 +50,37 @@ export function addToIndexImportTree(moduleName: string, outpurDir: string, impo
 
         const isLast = i === importTree.length - 1;
 
-        const moduleSpecifier = isLast ? `./${importTree[i]}.js` : `./${importTree[i]}/index.js`;
-        const hasImport = source.getImportDeclarations().find(id => id.getModuleSpecifierValue() === moduleSpecifier);
-        
-        if (!hasImport) {
-            source.addImportDeclaration({
-                moduleSpecifier: isLast ? `./${importTree[i]}.js` : `./${importTree[i]}/index.js`,
-                namespaceImport: !isLast ? importTree[i] : undefined,
-                namedImports: isLast ? [importTree[i]] : undefined
-            });
-        }
+        if (isLast) {
 
-        const exportDeclaration = source.getExportDeclaration(() => true);
-        if (!exportDeclaration) {
-            source.addExportDeclaration({
-                namedExports: [importTree[i]]
-            });
+            const moduleSpecifier = `./${importTree[i]}.js`;
+            const hasImport = source.getExportDeclarations().find(id => id.getModuleSpecifierValue() === moduleSpecifier);
+
+            if (!hasImport) {
+                source.addExportDeclaration({
+                    moduleSpecifier
+                });
+            }
+
         } else {
-            if (!exportDeclaration.getNamedExports().find(ne => ne.getName() === importTree[i])) {
-                exportDeclaration.addNamedExport(importTree[i]);
+            const moduleSpecifier = `./${importTree[i]}/index.js`;
+            const hasImport = source.getImportDeclarations().find(id => id.getModuleSpecifierValue() === moduleSpecifier);
+        
+            if (!hasImport) {
+                source.addImportDeclaration({
+                    moduleSpecifier: `./${importTree[i]}/index.js`,
+                    namespaceImport: importTree[i]
+                });
+
+                const exportDeclaration = source.getExportDeclaration(() => true);
+                if (!exportDeclaration) {
+                    source.addExportDeclaration({
+                        namedExports: [importTree[i]]
+                    });
+                } else {
+                    if (!exportDeclaration.getNamedExports().find(ne => ne.getName() === importTree[i])) {
+                        exportDeclaration.addNamedExport(importTree[i]);
+                    }
+                }
             }
         }
         
