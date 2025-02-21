@@ -38,7 +38,7 @@ export function removeUnnecessaryQuotesFromPropertyName(name: string): string {
     return `'${witoutQuotes}'`; // Keep quotes if it's not a valid identifier
 }
 
-function addToIndexImportTree(moduleName: string, outpurDir: string, importTree: string[]) {
+export function addToIndexImportTree(moduleName: string, outpurDir: string, importTree: string[]) {
     let parentName = moduleName;
     let parentPath = outpurDir;
     for (let i = 0; i < importTree.length; i++) {
