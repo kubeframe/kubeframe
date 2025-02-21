@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.0...cli-v0.4.1) (2025-02-21)
+
+
+### Fixes
+
+* Exports was missing from package.json ([c2cf926](https://github.com/kubeframe/kubeframe/commit/c2cf9266a0d962a3ce308dfcf3e402ecd58fcb59))
+
 ## [0.4.0](https://github.com/kubeframe/kubeframe/compare/cli-v0.3.3...cli-v0.4.0) (2025-02-21)
 
 
