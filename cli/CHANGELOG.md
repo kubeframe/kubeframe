@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.1...cli-v0.4.2) (2025-02-21)
+
+
+### Fixes
+
+* Fix exports so that all classes and interfaces get exported from lowest directories ([5041b94](https://github.com/kubeframe/kubeframe/commit/5041b94f220f89ede2ea071146c12a4e773c5c0d))
+
 ## [0.4.1](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.0...cli-v0.4.1) (2025-02-21)
 
 
