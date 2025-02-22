@@ -25,7 +25,9 @@
   },
   "dependencies": {
     "endent": "^2.1.0",
-    "yaml": "^2.7.0",
+    "yaml": "^2.7.0"
+  },
+  "peerDependencies": {
     "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@0.4.3"
   },
   "devDependencies": {

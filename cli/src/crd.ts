@@ -113,7 +113,7 @@ function createOrUpdateCRDAPIResourceFactory(output: string, groupVersionKind: G
 
 function createAPIResourceFactory(): string {
     return `
-import { APIResourceFactory } from '@kubeframe/k8s/base/APIResourceFactory.js'
+import { APIResourceFactory } from '@kubeframe/k8s/base';
 import * as crds from './index.js';
 export function registerCRDs() {
     
@@ -142,12 +142,12 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
 
     // ObjectMeta import
     sourceFile.addImportDeclaration({
-        moduleSpecifier: '@kubeframe/k8s/meta/v1/ObjectMeta.js',
-        namedImports: [namespaced ? 'NamespacedObjectMeta' : 'ObjectMeta']
+        moduleSpecifier: '@kubeframe/k8s',
+        namespaceImport: 'k8s',
     });
 
     sourceFile.addImportDeclaration({
-        moduleSpecifier: '@kubeframe/k8s/base/APIResource.js',
+        moduleSpecifier: '@kubeframe/k8s/base',
         namedImports: [namespaced ? 'NamespacedAPIResource' : 'APIResource']
     });
 
@@ -156,7 +156,7 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
 
         const interfaceDeclaration = interfaces[0];
         interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'metadata'))
-            ?.setType(namespaced ? 'NamespacedObjectMeta' : 'ObjectMeta')
+            ?.setType(namespaced ? 'k8s.meta.v1.NamespacedObjectMeta' : 'k8s.meta.v1.ObjectMeta')
             .setHasQuestionToken(false);
 
         // Extract spec into new interface
