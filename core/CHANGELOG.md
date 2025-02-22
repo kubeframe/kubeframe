@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/kubeframe/kubeframe/compare/core-v0.3.2...core-v0.3.3) (2025-02-22)
+
+
+### Fixes
+
+* CRD imports and make k8s peerDependency ([920f985](https://github.com/kubeframe/kubeframe/commit/920f985b36c9ce9ced17911e478efc2e01d5b56c))
+
 ## [0.3.2](https://github.com/kubeframe/kubeframe/compare/core-v0.3.1...core-v0.3.2) (2025-02-21)
 
 
