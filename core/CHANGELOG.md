@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/kubeframe/kubeframe/compare/core-v0.3.1...core-v0.3.2) (2025-02-21)
+
+
+### Fixes
+
+* Fix imports to align with new exports ([498435e](https://github.com/kubeframe/kubeframe/commit/498435ea6ca719070a97af3324f6b0a10c5c56ef))
+
 ## [0.3.1](https://github.com/kubeframe/kubeframe/compare/core-v0.3.0...core-v0.3.1) (2025-02-21)
 
 
