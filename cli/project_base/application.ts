@@ -1,4 +1,4 @@
-import * as k8s from '@kubeframe/k8s';
+import { k8s } from '@kubeframe/k8s';
 import { Frame, ResourceCollector } from '@kubeframe/core';
 
 export class ApplicationFrame extends Frame {
