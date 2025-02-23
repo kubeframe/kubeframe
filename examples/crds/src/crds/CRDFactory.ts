@@ -1,6 +1,6 @@
 
 import { APIResourceFactory } from '@kubeframe/k8s';
-import { crds } from './crds.js';
+import * as crds from './crds.js';
 export function registerCRDs() {
     APIResourceFactory.registerResource('monitoring.coreos.com/v1/ServiceMonitor', (json: any) => new crds.monitoring.coreos.com.v1.ServiceMonitor(json));
     APIResourceFactory.registerResource('monitoring.coreos.com/v1/PrometheusRule', (json: any) => new crds.monitoring.coreos.com.v1.PrometheusRule(json));

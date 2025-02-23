@@ -10,15 +10,15 @@
         "generate-crds": "rm -rf ./src/crds && cli generate-crd from-config-file ./crds-config.yaml --output ./src/crds"
     },
     "overrides": {
-        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@~0.4.4",
-        "@kubeframe/core": "~0.3.3"
+        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@~0.5.2",
+        "@kubeframe/core": "~0.4.2"
     },
     "dependencies": {
-        "@kubeframe/core": "~0.3.3",
-        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@~0.4.4"
+        "@kubeframe/core": "~0.4.2",
+        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@~0.5.2"
     },
     "devDependencies": {
-        "@kubeframe/cli": "^0.4.3",
+        "@kubeframe/cli": "^0.5.2",
         "@types/node": "^22.13.4",
         "typescript": "^5.7.3"
     },
