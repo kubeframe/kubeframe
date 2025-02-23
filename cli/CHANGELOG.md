@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/kubeframe/kubeframe/compare/cli-v0.5.1...cli-v0.5.2) (2025-02-23)
+
+
+### Fixes
+
+* Use namespaced import for crds ([71991dc](https://github.com/kubeframe/kubeframe/commit/71991dc207c8b9ca1b7f8b63e2ac875c85ae3913))
+
 ## [0.5.1](https://github.com/kubeframe/kubeframe/compare/cli-v0.5.0...cli-v0.5.1) (2025-02-23)
 
 
