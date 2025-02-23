@@ -125,7 +125,7 @@ function createOrUpdateCRDAPIResourceFactory(output: string, groupVersionKind: G
 function createAPIResourceFactory(): string {
     return `
 import { APIResourceFactory } from '@kubeframe/k8s';
-import { crds } from './crds.js';
+import * as crds from './crds.js';
 export function registerCRDs() {
     
 }
