@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/kubeframe/kubeframe/compare/core-v0.3.5...core-v0.4.0) (2025-02-23)
+
+
+### Features
+
+* Simplify k8s importing and provide single entry to all files and include proper types export ([fc8f235](https://github.com/kubeframe/kubeframe/commit/fc8f2350bc6cb4d238c527f7d79f46ebe44f9fac))
+
 ## [0.3.5](https://github.com/kubeframe/kubeframe/compare/core-v0.3.4...core-v0.3.5) (2025-02-23)
 
 

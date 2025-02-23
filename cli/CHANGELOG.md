@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.5...cli-v0.5.0) (2025-02-23)
+
+
+### Features
+
+* Simplify k8s importing and provide single entry to all files and include proper types export ([fc8f235](https://github.com/kubeframe/kubeframe/commit/fc8f2350bc6cb4d238c527f7d79f46ebe44f9fac))
+
+
+### Fixes
+
+* Add index.ts for base dir, its not generated anymore ([f9a76e5](https://github.com/kubeframe/kubeframe/commit/f9a76e570ea24b55eb5f617c115c71d5ef3d2e3f))
+* Fix import in project base to named import ([d1bf26a](https://github.com/kubeframe/kubeframe/commit/d1bf26a7e01d4ec373ae1f2682f5ad4dc52c9df8))
+* Fix k8s import in factory ([8fedf96](https://github.com/kubeframe/kubeframe/commit/8fedf966f9d242335ed15b5b2176c95214edfe36))
+* Only include dist directory in published package ([f8e480e](https://github.com/kubeframe/kubeframe/commit/f8e480ee73b12fe4be3d78e79bcf6aa20715818b))
+
 ## [0.4.5](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.4...cli-v0.4.5) (2025-02-23)
 
 
