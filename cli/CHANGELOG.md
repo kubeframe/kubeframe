@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.5](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.4...cli-v0.4.5) (2025-02-23)
+
+
+### Fixes
+
+* Dependency overrides, include CRD example ([536930d](https://github.com/kubeframe/kubeframe/commit/536930da09dfccfc7374eaa7e4e1564e0ef23cd8))
+
 ## [0.4.4](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.3...cli-v0.4.4) (2025-02-22)
 
 

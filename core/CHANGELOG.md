@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.4](https://github.com/kubeframe/kubeframe/compare/core-v0.3.3...core-v0.3.4) (2025-02-23)
+
+
+### Fixes
+
+* Dependency overrides, include CRD example ([536930d](https://github.com/kubeframe/kubeframe/commit/536930da09dfccfc7374eaa7e4e1564e0ef23cd8))
+
+
+### Dependencies
+
+* Manually update ([2bc4218](https://github.com/kubeframe/kubeframe/commit/2bc421807bd9589a234be9ba929ed04468560e47))
+
 ## [0.3.3](https://github.com/kubeframe/kubeframe/compare/core-v0.3.2...core-v0.3.3) (2025-02-22)
 
 
