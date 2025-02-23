@@ -21,6 +21,7 @@ export async function createProject(name: string, version: string) {
     const latestK8sVersion = await latestVersion.default(`@kubeframe/k8s-${version}`);
     const latestTypescriptVersion = await latestVersion.default(`typescript`);
     const latestNodeTypes = await latestVersion.default('@types/node');
+    const latestCliVersion = await latestVersion.default('@kubeframe/cli');
 
     // Create package.json
     const packageJson = {
@@ -31,7 +32,13 @@ export async function createProject(name: string, version: string) {
         type: 'module',
         scripts: {
             build: 'rm -rf ./dist && tsc',
+            generate: 'rm -rf ./src/crds && cli generate-crd from-config-file ./crds-config.yaml --output ./src/crds',
             start: 'node dist/main.js',
+        },
+        // Overrides are to make sure we only install single version of core and the specified version of k8s
+        overrides: {
+            "@kubeframe/core": `~${latestCoreVersion}`,
+            "@kubeframe/k8s": `npm:@kubeframe/k8s-${version}@~${latestK8sVersion}`,
         },
         dependencies: {
             "@kubeframe/core": `~${latestCoreVersion}`,
@@ -40,6 +47,7 @@ export async function createProject(name: string, version: string) {
         devDependencies: {
             "typescript": `^${latestTypescriptVersion}`,
             "@types/node": `^${latestNodeTypes}`,
+            "@kubeframe/cli": `@kubeframe/cli:~${latestCliVersion}`,
         },
         keywords: [],
     };

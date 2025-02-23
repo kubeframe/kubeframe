@@ -1,0 +1,26 @@
+{
+    "name": "crds",
+    "version": "0.0.1",
+    "description": "",
+    "main": "dist/main.js",
+    "type": "module",
+    "scripts": {
+        "build": "rm -rf ./dist && tsc",
+        "start": "node dist/main.js",
+        "generate-crds": "rm -rf ./src/crds && cli generate-crd from-config-file ./crds-config.yaml --output ./src/crds"
+    },
+    "overrides": {
+        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@~0.4.4",
+        "@kubeframe/core": "~0.3.3"
+    },
+    "dependencies": {
+        "@kubeframe/core": "~0.3.3",
+        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@~0.4.4"
+    },
+    "devDependencies": {
+        "@kubeframe/cli": "^0.4.3",
+        "@types/node": "^22.13.4",
+        "typescript": "^5.7.3"
+    },
+    "keywords": []
+}

@@ -24,11 +24,9 @@
     "url": "git+https://github.com/kubeframe/kubeframe.git"
   },
   "dependencies": {
+    "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@0.4.4",
     "endent": "^2.1.0",
     "yaml": "^2.7.0"
-  },
-  "peerDependencies": {
-    "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@0.4.4"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",

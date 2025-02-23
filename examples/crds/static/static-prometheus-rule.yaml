@@ -1,0 +1,20 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: example-prometheusrule
+  namespace: default
+  labels:
+    prometheus: example
+    role: alert-rules
+spec:
+  groups:
+  - name: example
+    rules:
+    - alert: HighRequestLatency
+      expr: job:request_latency_seconds:rate1m{job="myjob"} > 0.5
+      for: 10m
+      labels:
+        severity: page
+      annotations:
+        summary: High request latency
