@@ -102,3 +102,4 @@ const deployment = new k8s.apps.v1.Deployment({
 Examples are located in the `examples` directory.
 
 * [CRDs Example](examples/crds/README.md)
+* [Values and schema example](examples/values-file/README.md)

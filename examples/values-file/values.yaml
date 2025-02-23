@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=./schema.json
+deployments:
+  - name: my-deployment
+    replicas: 3
+    containers:
+      - name: my-container
+      - name: with-resources
+        resources:
+          limits:
+            cpu: 1
+            memory: 1Gi
+          requests:
+            cpu: 0.5
+            memory: 500Mi
