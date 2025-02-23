@@ -641,6 +641,9 @@ function createProjectStructure(outputDir: string, version: string) {
         "exports": {
             ".": "./dist/index.js",
         },
+        "files": [
+            "dist/**"
+        ],
         "types": "./dist/index.d.ts",
         "scripts": {
             "build": "rm -rf dist && tsc",
