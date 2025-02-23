@@ -1,6 +1,5 @@
-import * as k8s from '@kubeframe/k8s';
-import * as crds from './crds/index.js';
-import { registerCRDs } from './crds/CRDFactory.js';
+import { k8s } from '@kubeframe/k8s';
+import { crds, registerCRDs } from './crds/index.js';
 import { Frame, ResourceCollector, YAMLFrame } from '@kubeframe/core';
 
 export class ApplicationFrame extends Frame {

@@ -1,5 +1,5 @@
 import * as path from "path";
-import { APIResource, NamespacedAPIResource } from "@kubeframe/k8s/base";
+import { APIResource, NamespacedAPIResource } from "@kubeframe/k8s";
 import { CollectedResource, ResourceCollector, ResourceFilter } from "./resourceCollector.js";
 import { mkdirSync, statSync, writeFileSync } from "fs";
 import * as YAML from "yaml";

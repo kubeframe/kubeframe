@@ -1,5 +1,4 @@
-import * as k8s from "@kubeframe/k8s";
-import { NamespacedAPIResource } from "@kubeframe/k8s/base";
+import { k8s, NamespacedAPIResource } from "@kubeframe/k8s";
 
 interface AlertmanagerConfigSpec {
 

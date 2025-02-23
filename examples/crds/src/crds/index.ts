@@ -1,5 +1,5 @@
-import * as monitoring from "./monitoring/index.js";
-import * as bitnami from "./bitnami/index.js";
-import * as sloth from "./sloth/index.js";
 
-export { monitoring, bitnami, sloth };
+    import * as crds from './crds.js';
+    import { registerCRDs } from './CRDFactory.js';
+    export { crds, registerCRDs };
+    

@@ -1,4 +1,4 @@
-import { APIResource } from "@kubeframe/k8s/base";
+import { APIResource } from "@kubeframe/k8s";
 import * as YAML from 'yaml';
 
 export function resourceToYaml(resource: APIResource): string {
