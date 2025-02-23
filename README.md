@@ -85,7 +85,7 @@ All dependencies from must be imported via `@kubeframe/k8s` alias.
 Example:
 
 ```typescript
-import * from k8s from '@kubeframe/k8s';
+import { k8s } from '@kubeframe/k8s';
 
 const service = new k8s.core.v1.Service({
     ...

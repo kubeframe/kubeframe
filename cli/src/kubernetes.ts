@@ -640,9 +640,8 @@ function createProjectStructure(outputDir: string, version: string) {
         },
         "exports": {
             ".": "./dist/index.js",
-            "./version": "./dist/version.js",
-            "./base": "./dist/base/index.js",
         },
+        "types": "./dist/index.d.ts",
         "scripts": {
             "build": "rm -rf dist && tsc",
         },
@@ -701,8 +700,6 @@ function copyModels(modelsDir: string, outputDir: string) {
     for (const file of baseFiles) {
         const fullPath = path.join('base', file);
         const destPath = path.join(outputDir, 'base', file);
-        fileGroupVersionKinds.push(fullPath.replace('.ts', '').split('/'));
-        console.info(`Copying base file: ${fullPath} to ${destPath}`);
         copyFileSync(path.join(import.meta.dirname, fullPath), destPath);
     }
 
@@ -710,6 +707,18 @@ function copyModels(modelsDir: string, outputDir: string) {
         console.info(`Adding to index import tree: ${e}`);
         addToIndexImportTree('k8s', outputDir, e)
     });
+
+    createIndexFile(outputDir);
+}
+
+function createIndexFile(output: string) {
+    const index = `
+    import * as k8s from './k8s.js';
+    export * from './base/index.js';
+    export { k8s };
+    `;
+
+    writeFileSync(path.join(output, 'index.ts'), index);
 }
 
 function buildProject(outputDir: string) {

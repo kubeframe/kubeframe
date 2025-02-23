@@ -44,7 +44,8 @@ export function addToIndexImportTree(moduleName: string, outpurDir: string, impo
     for (let i = 0; i < importTree.length; i++) {
         const project = new Project();
 
-        const sourcePath = path.join(parentPath, "index.ts");
+        const isRoot = i === 0;
+        const sourcePath = path.join(parentPath, isRoot ? `${moduleName}.ts` : "index.ts");
         const fileExists = existsSync(sourcePath);
         const source = project.createSourceFile(parentPath, fileExists ? readFileSync(sourcePath, 'utf8') : '');
 

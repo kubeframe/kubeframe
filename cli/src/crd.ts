@@ -99,7 +99,18 @@ async function generate(crd: CRD, output: string) {
 
         addToIndexImportTree('crds', output, [...groupVersionKind.group.split('.'), groupVersionKind.version, groupVersionKind.kind]);
         createOrUpdateCRDAPIResourceFactory(output, groupVersionKind);
+        createIndexFile(output);
     }
+}
+
+function createIndexFile(output: string) {
+    const index = `
+    import * as crds from './crds.js';
+    import { registerCRDs } from './CRDFactory.js';
+    export { crds, registerCRDs };
+    `;
+
+    writeFileSync(path.join(output, 'index.ts'), index);
 }
 
 function createOrUpdateCRDAPIResourceFactory(output: string, groupVersionKind: GroupVersionKind) {
@@ -113,8 +124,8 @@ function createOrUpdateCRDAPIResourceFactory(output: string, groupVersionKind: G
 
 function createAPIResourceFactory(): string {
     return `
-import { APIResourceFactory } from '@kubeframe/k8s/base';
-import * as crds from './index.js';
+import { APIResourceFactory } from '@kubeframe/k8s';
+import { crds } from './crds.js';
 export function registerCRDs() {
     
 }
@@ -143,12 +154,7 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
     // ObjectMeta import
     sourceFile.addImportDeclaration({
         moduleSpecifier: '@kubeframe/k8s',
-        namespaceImport: 'k8s',
-    });
-
-    sourceFile.addImportDeclaration({
-        moduleSpecifier: '@kubeframe/k8s/base',
-        namedImports: [namespaced ? 'NamespacedAPIResource' : 'APIResource']
+        namedImports: [ 'k8s', namespaced ? 'NamespacedAPIResource' : 'APIResource' ],
     });
 
     const interfaces = sourceFile.getInterfaces();
