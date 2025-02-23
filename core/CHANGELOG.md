@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.1](https://github.com/kubeframe/kubeframe/compare/core-v0.4.0...core-v0.4.1) (2025-02-23)
+
+
+### Fixes
+
+* K8s imports in core ([859c521](https://github.com/kubeframe/kubeframe/commit/859c5212a1829193efeb2b925855cfc4aa6dcaa9))
+
+
+### Dependencies
+
+* Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:0.5.1 ([40d70ad](https://github.com/kubeframe/kubeframe/commit/40d70ad37c5db80a300fa9388e54a96c09e31642))
+
 ## [0.4.0](https://github.com/kubeframe/kubeframe/compare/core-v0.3.5...core-v0.4.0) (2025-02-23)
 
 
