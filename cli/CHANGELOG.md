@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/kubeframe/kubeframe/compare/cli-v0.5.0...cli-v0.5.1) (2025-02-23)
+
+
+### Fixes
+
+* Export version ([0cbe42f](https://github.com/kubeframe/kubeframe/commit/0cbe42f296bf29543229c4361345f474b9486710))
+
 ## [0.5.0](https://github.com/kubeframe/kubeframe/compare/cli-v0.4.5...cli-v0.5.0) (2025-02-23)
 
 
