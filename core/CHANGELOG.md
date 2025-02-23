@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/kubeframe/kubeframe/compare/core-v0.4.1...core-v0.4.2) (2025-02-23)
+
+
+### Dependencies
+
+* Update core package @kubeframe/k8s dependency to @kubeframe/k8s-1.32:0.5.2 ([04d191f](https://github.com/kubeframe/kubeframe/commit/04d191fb928d9bea76195c0735e6bc756d37be40))
+
 ## [0.4.1](https://github.com/kubeframe/kubeframe/compare/core-v0.4.0...core-v0.4.1) (2025-02-23)
 
 
