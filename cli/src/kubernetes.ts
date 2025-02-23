@@ -718,6 +718,7 @@ function createIndexFile(output: string) {
     const index = `
     import * as k8s from './k8s.js';
     export * from './base/index.js';
+    export * from './version.js';
     export { k8s };
     `;
 
