@@ -10,10 +10,6 @@ export abstract class Frame {
 
     async build(resourceCollector: ResourceCollector): Promise<void> {
 
-        for (const frame of this.subFrames) {
-            await frame.build(resourceCollector);
-        }
-
         await this.doPreBuild(resourceCollector);
 
         for (const frame of this.subFrames) {
