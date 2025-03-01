@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/kubeframe/kubeframe/compare/core-v0.4.2...core-v0.4.3) (2025-03-01)
+
+
+### Fixes
+
+* Remove duplicate running of build, build should called on topmost frame only ([b232142](https://github.com/kubeframe/kubeframe/commit/b232142413f058edc428682250b14a76b9cec2cb))
+
 ## [0.4.2](https://github.com/kubeframe/kubeframe/compare/core-v0.4.1...core-v0.4.2) (2025-02-23)
 
 
