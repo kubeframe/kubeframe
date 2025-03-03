@@ -1,7 +1,8 @@
 import { APIResource } from "@kubeframe/k8s";
+import { Frame } from "./frame.js";
 
 export interface SourceInfo {
-    frameName: string;
+    frame: Frame;
     data?: Map<string, any>;
 }
 

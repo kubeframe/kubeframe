@@ -8,8 +8,8 @@ export class YAMLFrame extends Frame {
 
     private source: string;
 
-    constructor(private name: string, yamlOrPath: string, isPath: boolean) {
-        super();
+    constructor(name: string, yamlOrPath: string, isPath: boolean) {
+        super(name);
         
         if (isPath) {
             this.source = readFileSync(yamlOrPath, 'utf8');
@@ -26,7 +26,7 @@ export class YAMLFrame extends Frame {
             const json = doc.toJSON();
             const resource = APIResourceFactory.createFromPlainJSON(json);
             resourceCollector.addResource({
-                frameName: this.name,
+                frame: this,
             }, resource);
         });
     }

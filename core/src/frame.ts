@@ -2,15 +2,27 @@ import { ResourceCollector } from './resourceCollector.js';
 
 export abstract class Frame {
 
-    subFrames: Frame[] = [];
+    private name: string;
+
+    private subFrames: Frame[] = [];
 
     private parent: Frame;
 
-    constructor() { }
+    constructor(name?: string) {
+        if (!name) {
+            this.name = this.constructor.name;
+        } else {
+            this.name = name;
+        }
+    }
 
     async build(resourceCollector: ResourceCollector): Promise<void> {
 
         await this.doPreBuild(resourceCollector);
+
+        for (const frame of this.subFrames) {
+            await frame.doPreBuild(resourceCollector);
+        }
 
         for (const frame of this.subFrames) {
             await frame.doBuild(resourceCollector);
@@ -32,7 +44,7 @@ export abstract class Frame {
     abstract doPostBuild(resourceCollector: ResourceCollector): Promise<void>;
 
     getName() {
-        return this.constructor.name;
+        return this.name;
     }
 
     getParent() {

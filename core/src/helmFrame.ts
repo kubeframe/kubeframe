@@ -15,8 +15,8 @@ export interface HelmOptions {
  */
 export class HelmFrame extends Frame {
 
-    constructor(private name: string, private options: HelmOptions) {
-        super();
+    constructor(name: string, private options: HelmOptions) {
+        super(name);
     }
 
     async doPreBuild() { }
@@ -33,7 +33,7 @@ export class HelmFrame extends Frame {
             const json = doc.toJSON();
             const resource = APIResourceFactory.createFromPlainJSON(json);
             resourceCollector.addResource({
-                frameName: this.name,
+                frame: this,
             }, resource);
         }
     }
