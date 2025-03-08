@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
-import { Project, SourceFile } from "ts-morph";
+import { ClassDeclaration, InterfaceDeclaration, Project, SourceFile } from "ts-morph";
+import { GroupVersionKind, groupVersionToString } from "./kubernetes.js";
 
 export function comparePropertyName(a: string, b: string) {
     return a === b || a === `'${b}'` || a === `"${b}"`;
@@ -89,4 +90,36 @@ export function addToIndexImportTree(moduleName: string, outpurDir: string, impo
         parentPath = path.join(parentPath, importTree[i]);
         parentName = importTree[i];
     }
+}
+
+export function addClassConstructor(
+    modelClass: ClassDeclaration,
+    groupVersionKind: GroupVersionKind,
+    interfaceDeclaration: InterfaceDeclaration)
+{
+    modelClass.addConstructor({
+        parameters: [
+            {
+                name: 'args',
+                type: `${groupVersionKind.kind}Args`,
+                hasQuestionToken: false,
+            }
+        ],
+        statements: [
+            `super('${groupVersionToString(groupVersionKind)}', '${groupVersionKind.kind}', args.metadata);`,
+            interfaceDeclaration.getProperties().map(p => {
+                const name = p.getName();
+                // Metadata is inherited from APIResource or NamespacedAPIResource and passed in via constructor
+                if (!comparePropertyName(name, 'metadata')) {
+                    if (name.includes(`'`)) {
+                        return `this[${name}] = args[${name}];`;
+                    } else {
+                        return `this.${name} = args.${name};`;
+                    }
+                }
+            })
+            .filter(statement => statement)
+            .join('\n'),
+        ],
+    });
 }

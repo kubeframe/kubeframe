@@ -30,6 +30,10 @@ jobs:
         working-directory: ./cli
         run: npm run build
 
+      - name: Test
+        working-directory: ./cli
+        run: npm run test
+
       - name: Test Generate Kubernetes Package
         working-directory: ./cli
         run:

@@ -10,7 +10,10 @@
         "noFallthroughCasesInSwitch": true,
         "noEmitOnError": true,
         "outDir": "dist",
-        "rootDir": "src"
+        "rootDirs": [
+            "src",
+            "tests"
+        ],
     },
     "exclude": [
         "base",

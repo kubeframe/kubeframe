@@ -1,13 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { compile } from 'json-schema-to-typescript';
 import path = require('path');
-import { Project, PropertyAssignment, SyntaxKind, ts, VariableDeclarationKind } from 'ts-morph';
+import { Project, SyntaxKind } from 'ts-morph';
 import * as YAML from 'yaml';
-import { addToIndexImportTree, comparePropertyName, convertInterfaceToClass } from './typescriptHelpers.js';
-import { GroupVersionKind, groupVersionKindToString, groupVersionToString } from './kubernetes.js';
-import { upperCaseFirstLetter } from './util.js';
-import { group } from 'console';
+import { addClassConstructor, addToIndexImportTree, comparePropertyName, convertInterfaceToClass } from './typescriptHelpers.js';
+import { GroupVersionKind, groupVersionKindToString } from './kubernetes.js';
 
 interface CRD {
     apiVersion: string;
@@ -200,31 +198,7 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
             
             modelClass.setExtends(namespaced ? 'NamespacedAPIResource' : 'APIResource');
 
-            modelClass.addConstructor({
-                parameters: [
-                    {
-                        name: 'args',
-                        type: `${groupVersionKind.kind}Args`,
-                        hasQuestionToken: false,
-                    }
-                ],
-                statements: [
-                    `super('${groupVersionToString(groupVersionKind)}', '${groupVersionKind.kind}', args.metadata);`,
-                    interfaceDeclaration.getProperties().map(p => {
-                        const name = p.getName();
-                        // Metadata is inherited from APIResource or NamespacedAPIResource and passed in via constructor
-                        if (!comparePropertyName(name, 'metadata')) {
-                            if (name.includes(`'`)) {
-                                return `this[${name}] = args[${name}];`;
-                            } else {
-                                return `this.${name} = args.${name};`;
-                            }
-                        }
-                    })
-                    .filter(statement => statement)
-                    .join('\n'),
-                ],
-            });
+            addClassConstructor(modelClass, groupVersionKind, interfaceDeclaration);
         }
     }
 

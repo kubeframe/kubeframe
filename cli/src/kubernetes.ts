@@ -5,7 +5,7 @@ import _ from 'lodash';
 import { ClassDeclaration, Project, SourceFile, ts } from "ts-morph";
 import { chunkArray, formatComment, upperCaseFirstLetter } from './util.js';
 import * as os from 'os';
-import { addToIndexImportTree, comparePropertyName, removeUnnecessaryQuotesFromPropertyName } from './typescriptHelpers.js';
+import { addClassConstructor, addToIndexImportTree, comparePropertyName, removeUnnecessaryQuotesFromPropertyName } from './typescriptHelpers.js';
 import { promises as fsPromises } from 'fs';
 
 export interface GroupVersionKind {
@@ -475,31 +475,7 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
                 modelClass.getProperty((p => comparePropertyName(p.getName(), 'apiVersion')))?.remove();
                 modelClass.getProperty((p => comparePropertyName(p.getName(), 'kind')))?.remove();
 
-                modelClass.addConstructor({
-                    parameters: [
-                        {
-                            name: 'args',
-                            type: `${groupVersionKind.kind}Args`,
-                            hasQuestionToken: false,
-                        }
-                    ],
-                    statements: [
-                        `super('${groupVersionToString(groupVersionKind)}', '${groupVersionKind.kind}', args.metadata);`,
-                        argsInterface.getProperties().map(p => {
-                            const name = p.getName();
-                            // Metadata is inherited from APIResource or NamespacedAPIResource and passed in via constructor
-                            if (!comparePropertyName(name, 'metadata')) {
-                                if (name.includes(`'`)) {
-                                    return `this[${name}] = args[${name}];`;
-                                } else {
-                                    return `this.${name} = args.${name};`;
-                                }
-                            }
-                        })
-                        .filter(statement => statement)
-                        .join('\n'),
-                    ],
-                });
+                addClassConstructor(modelClass, groupVersionKind, argsInterface);
 
                 state.factoryGenerationProperties.push({
                     groupVersionKind: groupVersionKind,

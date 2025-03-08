@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "build": "rm -rf dist && tsc && cp -r base ./dist/base && cp -r project_base ./dist/project_base && npm run add_shebang && chmod +x dist/main.js",
+    "test": "ts-mocha --import=tsx ./tests/**/*.spec.ts",
     "add_shebang": "node ./helpers/add_shebang.js dist/main.js",
     "openapi-generate": "openapi-generator-cli generate"
   },
@@ -22,9 +23,6 @@
     "url": "git+https://github.com/kubeframe/kubeframe.git"
   },
   "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^22.12.0"
-  },
   "engines": {
     "node": ">=22.0.0"
   },
@@ -43,5 +41,14 @@
     "ts-morph": "^25.0.0",
     "typescript": "^5.7.3",
     "yaml": "^2.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.12.0",
+    "@types/mocha": "^10.0.10",
+    "@types/sinon": "^17.0.4",
+    "mocha": "^11.1.0",
+    "sinon": "^19.0.2",
+    "ts-mocha": "^11.1.0",
+    "tsx": "^4.19.3"
   }
 }
