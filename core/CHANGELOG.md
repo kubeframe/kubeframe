@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.4](https://github.com/kubeframe/kubeframe/compare/core-v0.4.3...core-v0.4.4) (2025-03-08)
+
+
+### Fixes
+
+* Add tests to exclude so it won't get compiled into dist ([72e6437](https://github.com/kubeframe/kubeframe/commit/72e643722aa9929c7f47916b6d73c1273f2cbc1a))
+* preBuild was not called for sub frames, add tests ([860f494](https://github.com/kubeframe/kubeframe/commit/860f494b67f55aeea89c1b03d9f2e91200538c92))
+
 ## [0.4.3](https://github.com/kubeframe/kubeframe/compare/core-v0.4.2...core-v0.4.3) (2025-03-01)
 
 

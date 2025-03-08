@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.3](https://github.com/kubeframe/kubeframe/compare/cli-v0.5.2...cli-v0.5.3) (2025-03-08)
+
+
+### Fixes
+
+* Add first test for cli ([7d23c58](https://github.com/kubeframe/kubeframe/commit/7d23c58ed4a25a8b4acc9d304c525d5c84ba2e29))
+* Add tests to exclude so it won't get compiled into dist ([72e6437](https://github.com/kubeframe/kubeframe/commit/72e643722aa9929c7f47916b6d73c1273f2cbc1a))
+
 ## [0.5.2](https://github.com/kubeframe/kubeframe/compare/cli-v0.5.1...cli-v0.5.2) (2025-02-23)
 
 
