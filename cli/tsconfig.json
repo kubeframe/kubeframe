@@ -19,6 +19,6 @@
         "base",
         "dist",
         "project_base",
-        "test"
+        "tests"
     ]
 }

@@ -16,6 +16,7 @@
         "outDir": "dist"
     },
     "exclude": [
-        "dist"
+        "dist",
+        "tests"
     ]
 }
