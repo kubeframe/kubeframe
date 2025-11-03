@@ -22,6 +22,7 @@ jobs:
       id: release
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        release-type: simple
 
   publish-cli:
     needs: release
