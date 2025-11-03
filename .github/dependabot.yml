@@ -1,0 +1,22 @@
+# Format of this file: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#about-the-dependabotyml-file
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "npm"
+    directory: "/cli"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    registries: "*"
+
+  - package-ecosystem: "npm"
+    directory: "/core"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    registries: "*"
