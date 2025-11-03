@@ -88,7 +88,7 @@ jobs:
       - name: Update package name
         working-directory: ./core
         run: |
-          jq '.name = "@kubeframe/kubeframe-'${{matrix.versions}}'" package.json > tmp.json && mv tmp.json package.json
+          jq '.name = "@kubeframe/kubeframe-${{matrix.versions}}"' package.json > tmp.json && mv tmp.json package.json
       - name: Install dependencies
         working-directory: ./core
         run: npm ci
