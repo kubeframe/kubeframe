@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/kubeframe/kubeframe/compare/v1.0.2...v1.0.3) (2025-11-03)
+
+
+### Bug Fixes
+
+* Fix package name setting ([9a627c0](https://github.com/kubeframe/kubeframe/commit/9a627c09704658cccd63ee56bab6caa5f9b656da))
+
 ## [1.0.2](https://github.com/kubeframe/kubeframe/compare/v1.0.1...v1.0.2) (2025-11-03)
 
 
