@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/kubeframe/kubeframe/compare/v1.0.1...v1.0.2) (2025-11-03)
+
+
+### Bug Fixes
+
+* Deps install missing ([9c63aed](https://github.com/kubeframe/kubeframe/commit/9c63aed44d3e96e35310063aabf5b950250eb360))
+
 ## [1.0.1](https://github.com/kubeframe/kubeframe/compare/v1.0.0...v1.0.1) (2025-11-03)
 
 
