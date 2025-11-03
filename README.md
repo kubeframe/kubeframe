@@ -64,20 +64,6 @@ npm run build
 
 #### Contents of the generated project
 
-##### Dependencies
-
-* All projects generated with KubeFrame depend on `kubeframe/k8s` and `kubeframe/core`.
-* The `kubeframe/k8s` itself does not actually exist as a package but it used as an alias to the `@kubeframe/k8s-<version>` packages.
-* This approach allows you to easily switch between different versions of the `@kubeframe/k8s` package.
-* Created project always overrides `@kubeframe/k8s` and `@kubeframe/core` under package.json `overrides` section.
-  This enforced to use the same version of `@kubeframe/k8s` and `@kubeframe/core` packages.
-
-##### Overriding the `@kubeframe/k8s` alias
-
-```
-"@kubeframe/k8s": "npm:@kubeframe/k8s-<k8s-version>@<version>"
-```
-
 ##### Importing and using Kubernetes resources classes
 
 All dependencies from must be imported via `@kubeframe/k8s` alias.
@@ -85,7 +71,7 @@ All dependencies from must be imported via `@kubeframe/k8s` alias.
 Example:
 
 ```typescript
-import { k8s } from '@kubeframe/k8s';
+import { k8s } from '@kubeframe/kubeframe-<version>';
 
 const service = new k8s.core.v1.Service({
     ...
