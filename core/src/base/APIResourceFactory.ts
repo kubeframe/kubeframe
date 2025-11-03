@@ -1,12 +1,11 @@
 import { APIResource } from "./APIResource.js";
-import * as k8s from "../k8s.js";
-
-export type FactoryFunction = (json: unknown) => APIResource;
+import { FactoryFunction } from "./FactoryFunction.js";
+import { FACTORY_LIST } from "../generated/FactoryList.js";
 
 export class APIResourceFactory {
 
     static mapping = new Map<string,FactoryFunction>([
-        
+        ...FACTORY_LIST
     ]);
 
     static registerResource(key: string, factory: FactoryFunction) {

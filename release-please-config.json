@@ -18,15 +18,5 @@
         "hidden": false,
         "section": "Dependencies"
       }
-    ],
-    "packages": {
-      "cli": {
-        "package-name": "@kubeframe/cli",
-        "release-type": "node"
-      },
-      "core": {
-        "package-name": "@kubeframe/core",
-        "release-type": "node"
-      }
-    }
+    ]
   }

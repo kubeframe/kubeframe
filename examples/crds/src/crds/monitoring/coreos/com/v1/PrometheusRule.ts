@@ -1,17 +1,17 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/k8s";
+import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
 
 interface PrometheusRuleSpec {
 
     /**
-     * Content of Prometheus rule file
+     * groups defines the content of Prometheus rule file
      */
     groups?: {
       /**
-       * Interval determines how often rules in the group are evaluated.
+       * interval defines how often rules in the group are evaluated.
        */
       interval?: string;
       /**
-       * Labels to add or overwrite before storing the result for its rules.
+       * labels define the labels to add or overwrite before storing the result for its rules.
        * The labels defined at the rule level take precedence.
        *
        * It requires Prometheus >= 3.0.0.
@@ -21,64 +21,64 @@ interface PrometheusRuleSpec {
         [k: string]: string;
       };
       /**
-       * Limit the number of alerts an alerting rule and series a recording
+       * limit defines the number of alerts an alerting rule and series a recording
        * rule can produce.
        * Limit is supported starting with Prometheus >= 2.31 and Thanos Ruler >= 0.24.
        */
       limit?: number;
       /**
-       * Name of the rule group.
+       * name defines the name of the rule group.
        */
       name: string;
       /**
-       * PartialResponseStrategy is only used by ThanosRuler and will
+       * partial_response_strategy is only used by ThanosRuler and will
        * be ignored by Prometheus instances.
        * More info: https://github.com/thanos-io/thanos/blob/main/docs/components/rule.md#partial-response
        */
       partial_response_strategy?: string;
       /**
-       * Defines the offset the rule evaluation timestamp of this particular group by the specified duration into the past.
+       * query_offset defines the offset the rule evaluation timestamp of this particular group by the specified duration into the past.
        *
        * It requires Prometheus >= v2.53.0.
        * It is not supported for ThanosRuler.
        */
       query_offset?: string;
       /**
-       * List of alerting and recording rules.
+       * rules defines the list of alerting and recording rules.
        */
       rules?: {
         /**
-         * Name of the alert. Must be a valid label value.
+         * alert defines the name of the alert. Must be a valid label value.
          * Only one of `record` and `alert` must be set.
          */
         alert?: string;
         /**
-         * Annotations to add to each alert.
+         * annotations defines annotations to add to each alert.
          * Only valid for alerting rules.
          */
         annotations?: {
           [k: string]: string;
         };
         /**
-         * PromQL expression to evaluate.
+         * expr defines the PromQL expression to evaluate.
          */
         expr: number | string;
         /**
-         * Alerts are considered firing once they have been returned for this long.
+         * for defines how alerts are considered firing once they have been returned for this long.
          */
         for?: string;
         /**
-         * KeepFiringFor defines how long an alert will continue firing after the condition that triggered it has cleared.
+         * keep_firing_for defines how long an alert will continue firing after the condition that triggered it has cleared.
          */
         keep_firing_for?: string;
         /**
-         * Labels to add or overwrite.
+         * labels defines labels to add or overwrite.
          */
         labels?: {
           [k: string]: string;
         };
         /**
-         * Name of the time series to output to. Must be a valid metric name.
+         * record defines the name of the time series to output to. Must be a valid metric name.
          * Only one of `record` and `alert` must be set.
          */
         record?: string;
@@ -100,16 +100,82 @@ interface PrometheusRuleSpec {
 export interface PrometheusRuleArgs {
   metadata: k8s.meta.v1.NamespacedObjectMeta;
   /**
-   * Specification of desired alerting rule definitions for Prometheus.
+   * spec defines the specification of desired alerting rule definitions for Prometheus.
    */
   spec: PrometheusRuleSpec;
+  /**
+   * status defines the status subresource. It is under active development and is updated only when the
+   * "StatusForConfigurationResources" feature gate is enabled.
+   *
+   * Most recent observed status of the PrometheusRule. Read-only.
+   * More info:
+   * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+   */
+  status?: {
+    /**
+     * bindings defines the list of workload resources (Prometheus, PrometheusAgent, ThanosRuler or Alertmanager) which select the configuration resource.
+     */
+    bindings?: {
+      /**
+       * conditions defines the current state of the configuration resource when bound to the referenced Workload object.
+       */
+      conditions?: {
+        /**
+         * lastTransitionTime defines the time of the last update to the current status property.
+         */
+        lastTransitionTime: string;
+        /**
+         * message defines the human-readable message indicating details for the condition's last transition.
+         */
+        message?: string;
+        /**
+         * observedGeneration defines the .metadata.generation that the
+         * condition was set based upon. For instance, if `.metadata.generation` is
+         * currently 12, but the `.status.conditions[].observedGeneration` is 9, the
+         * condition is out of date with respect to the current state of the object.
+         */
+        observedGeneration?: number;
+        /**
+         * reason for the condition's last transition.
+         */
+        reason?: string;
+        /**
+         * status of the condition.
+         */
+        status: string;
+        /**
+         * type of the condition being reported.
+         * Currently, only "Accepted" is supported.
+         */
+        type: "Accepted";
+      }[];
+      /**
+       * group defines the group of the referenced resource.
+       */
+      group: "monitoring.coreos.com";
+      /**
+       * name defines the name of the referenced object.
+       */
+      name: string;
+      /**
+       * namespace defines the namespace of the referenced object.
+       */
+      namespace: string;
+      /**
+       * resource defines the type of resource being referenced (e.g. Prometheus, PrometheusAgent, ThanosRuler or Alertmanager).
+       */
+      resource: "prometheuses" | "prometheusagents" | "thanosrulers" | "alertmanagers";
+    }[];
+  };
 }
 
 export class PrometheusRule extends NamespacedAPIResource {
     spec: PrometheusRuleSpec;
+    status?: { bindings?: { conditions?: { lastTransitionTime: string; message?: string; observedGeneration?: number; reason?: string; status: string; type: "Accepted"; }[]; group: "monitoring.coreos.com"; name: string; namespace: string; resource: "prometheuses" | "prometheusagents" | "thanosrulers" | "alertmanagers"; }[]; };
 
     constructor(args: PrometheusRuleArgs) {
         super('monitoring.coreos.com/v1', 'PrometheusRule', args.metadata);
         this.spec = args.spec;
+        this.status = args.status;
     }
 }

@@ -4,8 +4,16 @@ import { compile } from 'json-schema-to-typescript';
 import path = require('path');
 import { Project, SyntaxKind } from 'ts-morph';
 import * as YAML from 'yaml';
-import { addClassConstructor, addToIndexImportTree, comparePropertyName, convertInterfaceToClass } from './typescriptHelpers.js';
-import { GroupVersionKind, groupVersionKindToString } from './kubernetes.js';
+import {
+    addClassConstructor,
+    addToIndexImportTree,
+    comparePropertyName,
+    convertInterfaceToClass,
+} from './typescriptHelpers.js';
+import {
+    GroupVersionKind,
+    groupVersionKindToString,
+} from './kubernetes.js';
 
 interface CRD {
     apiVersion: string;
@@ -35,33 +43,33 @@ interface CRDConfig {
     crds: string[];
 }
 
-export async function generateFromUrl(url: string, output: string) {
+export async function generateFromUrl(url: string, output: string, kubernetesVersion: string) {
     try {
         const res = await fetch(url);
         const crd = YAML.parse(await res.text()) as CRD;
-        generate(crd, output);
+        generate(crd, output, kubernetesVersion);
     } catch (ex) {
         console.error(ex);
     }
 }
 
-export async function generateFromFile(file: string, output: string) {
+export async function generateFromFile(file: string, output: string, kubernetesVersion: string) {
     try {
         const crd = YAML.parse(await readFile(file, 'utf-8')) as CRD;
-        generate(crd, output);
+        generate(crd, output, kubernetesVersion);
     } catch (ex) {
         console.error(ex);
     }
 }
 
-export async function generateFromConfigFile(file: string, output: string) {
+export async function generateFromConfigFile(file: string, output: string, kubernetesVersion: string) {
     try {
         const config = YAML.parse(await readFile(file, 'utf-8')) as CRDConfig;
         for (const crd of config.crds) {
             if (crd.startsWith('http://') || crd.startsWith('https://')) {
-                await generateFromUrl(crd, output);
+                await generateFromUrl(crd, output, kubernetesVersion);
             } else {
-                await generateFromFile(crd, output);
+                await generateFromFile(crd, output, kubernetesVersion);
             }
         }
     } catch (ex) {
@@ -69,7 +77,7 @@ export async function generateFromConfigFile(file: string, output: string) {
     }
 }
 
-async function generate(crd: CRD, output: string) {
+async function generate(crd: CRD, output: string, kubernetesVersion: string) {
     for (const version of crd.spec.versions) {
         const source = await compile(
             version.schema.openAPIV3Schema,
@@ -86,7 +94,7 @@ async function generate(crd: CRD, output: string) {
         };
 
         console.info(`Generating ${groupVersionKind.kind} for ${groupVersionKind.group}/${groupVersionKind.version}`);
-        const modified = transformTSSource(source, groupVersionKind, crd.spec.scope === 'Namespaced');
+        const modified = transformTSSource(source, kubernetesVersion, groupVersionKind, crd.spec.scope === 'Namespaced');
 
         const groupVersionDir = path.join(output, ...groupVersionKind.group.split('.'), groupVersionKind.version);
         if (!existsSync(groupVersionDir)) {
@@ -96,7 +104,7 @@ async function generate(crd: CRD, output: string) {
         writeFileSync(path.join(groupVersionDir, `${groupVersionKind.kind}.ts`), modified);
 
         addToIndexImportTree('crds', output, [...groupVersionKind.group.split('.'), groupVersionKind.version, groupVersionKind.kind]);
-        createOrUpdateCRDAPIResourceFactory(output, groupVersionKind);
+        createOrUpdateCRDAPIResourceFactory(output, kubernetesVersion, groupVersionKind);
         createIndexFile(output);
     }
 }
@@ -111,23 +119,27 @@ function createIndexFile(output: string) {
     writeFileSync(path.join(output, 'index.ts'), index);
 }
 
-function createOrUpdateCRDAPIResourceFactory(output: string, groupVersionKind: GroupVersionKind) {
+function createOrUpdateCRDAPIResourceFactory(
+    output: string,
+    kubernetesVersion: string,
+    groupVersionKind: GroupVersionKind
+) {
     const factoryFile = path.join(output, 'CRDFactory.ts');
     if (!existsSync(factoryFile)) {
-        writeFileSync(factoryFile, createAPIResourceFactory());
+        writeFileSync(factoryFile, createAPIResourceFactory(kubernetesVersion));
     }
     
     updateAPIResourceFactory(factoryFile, groupVersionKind);
 }
 
-function createAPIResourceFactory(): string {
+function createAPIResourceFactory(kubernetesVersion: string): string {
     return `
-import { APIResourceFactory } from '@kubeframe/k8s';
-import * as crds from './crds.js';
-export function registerCRDs() {
-    
-}
-`;
+    import { APIResourceFactory } from '@kubeframe/kubeframe-${kubernetesVersion}';
+    import * as crds from './crds.js';
+    export function registerCRDs() {
+        
+    }
+    `;
 }
 
 function updateAPIResourceFactory(file: string, groupVersionKind: GroupVersionKind) {
@@ -144,14 +156,19 @@ function updateAPIResourceFactory(file: string, groupVersionKind: GroupVersionKi
     project.saveSync();
 }
 
-function transformTSSource(source: string, groupVersionKind: GroupVersionKind, namespaced: boolean): string {
+function transformTSSource(
+    source: string,
+    kubernetesVersion: string,
+    groupVersionKind: GroupVersionKind,
+    namespaced: boolean
+): string {
 
     const project = new Project();
     const sourceFile = project.createSourceFile('temp.ts', source);
 
     // ObjectMeta import
     sourceFile.addImportDeclaration({
-        moduleSpecifier: '@kubeframe/k8s',
+        moduleSpecifier: `@kubeframe/kubeframe-${kubernetesVersion}`,
         namedImports: [ 'k8s', namespaced ? 'NamespacedAPIResource' : 'APIResource' ],
     });
 
@@ -166,7 +183,7 @@ function transformTSSource(source: string, groupVersionKind: GroupVersionKind, n
         // Extract spec into new interface
         const specProperty = interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'spec'));
         if (specProperty) {
-            // const specType = specProperty.getFullText();
+            
             const specInterfaceName = interfaceDeclaration.getName() + 'Spec';
             const specInterace = sourceFile.insertInterface(interfaceDeclaration.getChildIndex(), {
                 name: specInterfaceName,

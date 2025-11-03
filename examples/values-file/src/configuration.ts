@@ -1,12 +1,12 @@
 import { plainToInstance, Type } from "class-transformer";
-import { k8s } from "@kubeframe/k8s";
+import { k8s } from "@kubeframe/kubeframe-version";
 import { readFileSync } from "fs";
 import * as YAML from 'yaml';
 
 export class Container {
     name!: string;
-    // When using types from @kubeframe/k8s, schemas will contain documentation linking to the official Kubernetes documentation.
-    resources: k8s.core.v1.ResourceRequirements = {
+    // When using types from @kubeframe/kubeframe, schemas will contain documentation linking to the official Kubernetes documentation.
+    resources?: k8s.core.v1.ResourceRequirements = {
         limits: {
             cpu: "100m",
             memory: "128Mi",
@@ -23,8 +23,22 @@ export class Deployment {
      * Name of the deployment
      */
     name!: string;
+
     @Type(() => Container)
     containers!: Container[];
+
+    replicas?: k8s.apps.v1.DeploymentSpec['replicas'] = 1;
+}
+
+export class Service {
+    /**
+     * Name of the service
+     */
+    name!: string;
+
+    ports!: k8s.core.v1.ServicePort[];
+
+    selector!: { [key: string]: string };
 }
 
 export class Configuration {
@@ -33,6 +47,12 @@ export class Configuration {
      */
     @Type(() => Deployment)
     deployments?: Deployment[];
+
+    /**
+     * Services to be created
+     */
+    @Type(() => Service)
+    services?: Service[];
 
     static load(filePath: string): Configuration {
         const rawJson = YAML.parse(readFileSync(filePath, 'utf8'));

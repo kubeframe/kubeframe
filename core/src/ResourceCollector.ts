@@ -1,5 +1,5 @@
-import { APIResource } from "@kubeframe/k8s";
-import { Frame } from "./frame.js";
+import { APIResource } from "./base/APIResource.js";
+import { Frame } from "./Frame.js";
 
 export interface SourceInfo {
     frame: Frame;

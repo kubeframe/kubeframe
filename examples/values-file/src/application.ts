@@ -1,5 +1,4 @@
-import { k8s } from '@kubeframe/k8s';
-import { Frame, ResourceCollector } from '@kubeframe/core';
+import { k8s, Frame, ResourceCollector } from '@kubeframe/kubeframe-version';
 import { Configuration } from './configuration.js';
 
 export class ApplicationFrame extends Frame {
@@ -16,24 +15,30 @@ export class ApplicationFrame extends Frame {
     async doBuild(resourceCollector: ResourceCollector) {
         if (this.configuration.deployments) {
             for (const deployment of this.configuration.deployments) {
+
+                const selectorLabels: { [key: string]: string } = {
+                    'app': deployment.name,
+                };
+
                 const k8sDeployment = new k8s.apps.v1.Deployment({
                     metadata: {
                         name: deployment.name,
                         namespace: 'default',
                         labels: {
-                            'app': deployment.name,
+                            ...selectorLabels,
                         },
                     },
                     spec: {
+                        replicas: deployment.replicas,
                         selector: {
                             matchLabels: {
-                                'app': deployment.name,
+                                ...selectorLabels,
                             }
                         },
                         template: {
                             metadata: {
                                 labels: {
-                                    'app': deployment.name,
+                                    ...selectorLabels,
                                 }
                             },
                             spec: {
@@ -49,11 +54,35 @@ export class ApplicationFrame extends Frame {
                 });
 
                 resourceCollector.addResource({
-                    frameName: 'ApplicationFrame',
+                    frame: this,
                 }, k8sDeployment);
+            }
+        }
+
+        if (this.configuration.services) {
+            for (const service of this.configuration.services) {
+                const k8sService = new k8s.core.v1.Service({
+                    metadata: {
+                        name: service.name,
+                        namespace: 'default',
+                        labels: {
+                            'app': service.name,
+                        },
+                    },
+                    spec: {
+                        ports: service.ports,
+                        selector: service.selector,
+                    }
+                });
+
+                resourceCollector.addResource({
+                    frame: this,
+                }, k8sService);
             }
         }
     }
 
-    async doPostBuild() { }
+    async doPostBuild() {
+
+    }
 }

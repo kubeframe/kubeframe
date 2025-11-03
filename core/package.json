@@ -1,5 +1,5 @@
 {
-  "name": "@kubeframe/core",
+  "name": "@kubeframe/kubeframe-version",
   "version": "0.4.4",
   "type": "module",
   "scripts": {
@@ -26,7 +26,6 @@
     "url": "git+https://github.com/kubeframe/kubeframe.git"
   },
   "dependencies": {
-    "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@0.5.2",
     "endent": "^2.1.0",
     "yaml": "^2.7.0"
   },

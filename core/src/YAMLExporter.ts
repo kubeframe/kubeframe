@@ -1,7 +1,6 @@
 import { writeFileSync } from "fs";
-import { CollectedResource, ResourceCollector, ResourceFilter } from "./resourceCollector.js";
-import { resourceToYaml } from "./yaml.js";
-import { KUBEFRAME_KUBERNETES_VERSION } from "@kubeframe/k8s";
+import { CollectedResource, ResourceCollector, ResourceFilter } from "./ResourceCollector.js";
+import { resourceToYaml } from "./YAML.js";
 
 export class YAMLExporter {
     
@@ -29,7 +28,6 @@ export class YAMLExporter {
 
     private printDocumentHeader(resource: CollectedResource) {
         return [
-            "# KUBEFRAME_KUBERNETES_VERSION: " + KUBEFRAME_KUBERNETES_VERSION,
             "# SOURCE: " + resource.sourceInfo.frame.getName(),
         ].join("\n");
     }

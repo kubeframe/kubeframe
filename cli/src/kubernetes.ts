@@ -1,12 +1,25 @@
 import { execSync } from 'child_process';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'fs';
+import {
+    copyFileSync,
+    existsSync,
+    mkdirSync,
+    readdirSync,
+    readFileSync,
+    renameSync,
+    writeFileSync,
+} from 'fs';
 import * as path from 'path';
 import _ from 'lodash';
 import { ClassDeclaration, Project, SourceFile, ts } from "ts-morph";
 import { chunkArray, formatComment, upperCaseFirstLetter } from './util.js';
-import * as os from 'os';
-import { addClassConstructor, addToIndexImportTree, comparePropertyName, removeUnnecessaryQuotesFromPropertyName } from './typescriptHelpers.js';
+import {
+    addClassConstructor,
+    addToIndexImportTree,
+    comparePropertyName,
+    removeUnnecessaryQuotesFromPropertyName,
+} from './typescriptHelpers.js';
 import { promises as fsPromises } from 'fs';
+import dedent from 'dedent';
 
 export interface GroupVersionKind {
     group: string;
@@ -216,7 +229,7 @@ function runOpenApiGenerator(inputDir: string, outputDir: string, tmpDir: string
     const config = {
         spaces: 4,
         "generator-cli": {
-            version: "7.11.0",
+            version: "7.17.0",
             useDocker: true,
             generators: {
                 "v3.0": {
@@ -415,7 +428,7 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
 
                 // Add APIResource or NamespacedAPIResource import
                 sourceFile.addImportDeclaration({
-                    moduleSpecifier: '../../base/APIResource.js',
+                    moduleSpecifier: '../../../base/APIResource.js',
                     namedImports: [apiResourceProperties.isNamespaced ? 'NamespacedAPIResource' : 'APIResource'],
                 });
 
@@ -571,82 +584,6 @@ function copyDesiredApiSpecs(checkoutDir: string, inputDir: string) {
     }
 }
 
-function createProjectStructure(outputDir: string, version: string) {
-
-    if (!existsSync(outputDir)) {
-        mkdirSync(outputDir, { recursive: true });
-    }
-
-    const tsconfig = {
-        "compilerOptions": {
-            "lib": ["ESNext"],
-            "target": "ESNext",
-            "module": "NodeNext",
-            "moduleResolution": "Node16",
-            "declaration": true,
-            "strict": true,
-            "skipLibCheck": true,
-            "noFallthroughCasesInSwitch": true,
-            "noEmitOnError": true,
-            "outDir": "dist",
-            "rootDir": "src"
-        },
-        "exclude": [
-            "dist"
-        ]
-    };
-
-    const tsconfigPath = path.join(outputDir, 'tsconfig.json');
-    writeFileSync(tsconfigPath, JSON.stringify(tsconfig, null, 4));
-
-    // Get CLI package.json
-    const cliPackageJsonPath = path.join(import.meta.dirname, '../package.json');
-    const cliPackageJson = JSON.parse(readFileSync(cliPackageJsonPath).toString());
-
-    const packageJson = {
-        "name": `@kubeframe/k8s-${version}`,
-        // Use the same version as the CLI
-        "version": cliPackageJson.version,
-        "description": "Generated models for kubeframe",
-        "type": "module",
-        "homepage": "https://github.com/kubeframe/kubeframe",
-        "repository": {
-            "type": "git",
-            "url": "git+https://github.com/kubeframe/kubeframe.git"
-        },
-        "exports": {
-            ".": "./dist/index.js",
-        },
-        "files": [
-            "dist/**"
-        ],
-        "types": "./dist/index.d.ts",
-        "scripts": {
-            "build": "rm -rf dist && tsc",
-        },
-        "devDependencies": {
-            "typescript": cliPackageJson.devDependencies.typescript,
-            "@types/node": cliPackageJson.devDependencies['@types/node'],
-        },
-        "keywords": [],
-        "author": "",
-        "license": "ISC"
-    };
-
-    const packageJsonPath = path.join(outputDir, 'package.json');
-    writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 4));
-
-    // Create src directory
-    const srcDir = path.join(outputDir, 'src');
-    if (!existsSync(srcDir)) {
-        mkdirSync(srcDir, { recursive: true });
-    }
-
-    // Create version.ts file
-    const versionFile = path.join(srcDir, 'version.ts');
-    writeFileSync(versionFile, `export const KUBEFRAME_KUBERNETES_VERSION = '${version}';\n`);
-}
-
 function copyModels(modelsDir: string, outputDir: string) {
 
     const files = readdirSync(modelsDir, { recursive: true })
@@ -668,78 +605,32 @@ function copyModels(modelsDir: string, outputDir: string) {
         copyFileSync(path.join(modelsDir, file), path.join(outputDir, file));
     }
 
-    // Copy classes from base directory
-    if (!existsSync(path.join(outputDir, 'base'))) {
-        mkdirSync(path.join(outputDir, 'base'), { recursive: true });
-    }
-
-    const baseFiles = readdirSync(path.join(import.meta.dirname, 'base'))
-        .filter(f => f.endsWith('.ts'));
-
-    for (const file of baseFiles) {
-        const fullPath = path.join('base', file);
-        const destPath = path.join(outputDir, 'base', file);
-        copyFileSync(path.join(import.meta.dirname, fullPath), destPath);
-    }
-
     fileGroupVersionKinds.map(e => {
         console.info(`Adding to index import tree: ${e}`);
         addToIndexImportTree('k8s', outputDir, e)
-    });
-
-    createIndexFile(outputDir);
-}
-
-function createIndexFile(output: string) {
-    const index = `
-    import * as k8s from './k8s.js';
-    export * from './base/index.js';
-    export * from './version.js';
-    export { k8s };
-    `;
-
-    writeFileSync(path.join(output, 'index.ts'), index);
-}
-
-function buildProject(outputDir: string) {
-    execSync('npm install', {
-        cwd: outputDir,
-        stdio: 'inherit',
-    });
-
-    execSync('npm run build', {
-        cwd: outputDir,
-        stdio: 'inherit',
     });
 }
 
 function generateFactoryList(outputDir: string, factoryGenerationProperties: FactoryGenerationProperties[]) {
 
-    const proj = new Project();
-    const src = proj.createSourceFile(
-        'APIResourceFactory.ts',
-        readFileSync(path.join(outputDir, 'base', 'APIResourceFactory.ts')).toString()
-    );
+    const factoryContents = dedent(`
+    import { FactoryFunction } from '../base/FactoryFunction.js';
+    import * as k8s from './k8s.js';
 
-    const mappingProperty = src.getClass("APIResourceFactory")?.getStaticMember("mapping");
+    export const FACTORY_LIST: [string, FactoryFunction][] = [
+        ${factoryGenerationProperties.map(prop => {
+            const fullName = ['k8s', ...prop.path.split('/')].join('.');
+            return `['${groupVersionKindToString(prop.groupVersionKind)}', (json: any) => new ${fullName}(json)]`;
+        }).join(',\n    ')}
+    ];
+    `);
 
-    if (!mappingProperty) {
-        console.error(`Failed to find 'mapping' property in APIResourceFactory`);
-        process.exit(1);
-    }
-
-    factoryGenerationProperties.forEach(prop => {
-        const fullName = ['k8s', ...prop.path.split('/')].join('.');
-        mappingProperty.getFirstDescendantByKind(ts.SyntaxKind.ArrayLiteralExpression)
-            ?.insertElement(0, `['${groupVersionKindToString(prop.groupVersionKind)}', (json: any) => new ${fullName}(json)]\n`);
-    });
-
-    writeFileSync(path.join(outputDir, 'base', 'APIResourceFactory.ts'), src.getText());
+    writeFileSync(path.join(outputDir, 'FactoryList.ts'), factoryContents);
 }
 
 export async function generate(version: string, outputDir: string) {
 
-    const tmpDir = path.join(os.tmpdir(), 'kubeframe-model-generator');
+    const tmpDir = path.join(process.cwd(), 'generated');
     console.info(`Using temp directory: ${tmpDir}, output directory: ${outputDir}`);
 
     if (!existsSync(tmpDir)) {
@@ -776,13 +667,7 @@ export async function generate(version: string, outputDir: string) {
     moveFilesToGroupVersionDirectories(modelsDir, state);
     await postProcessModels(modelsDir, state);
     
-    createProjectStructure(outputDir, version);
-
     // Copy the models to the target directory
-    const outputSrcDir = path.join(outputDir, 'src');
-    copyModels(modelsDir, outputSrcDir);
-
-    generateFactoryList(outputSrcDir, state.factoryGenerationProperties);
-
-    buildProject(outputDir);
+    copyModels(modelsDir, path.join(outputDir, 'generated'));
+    generateFactoryList(path.join(outputDir, 'generated'), state.factoryGenerationProperties);
 }

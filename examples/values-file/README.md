@@ -18,6 +18,12 @@ This example demonstrates how to support values files and generate schema for th
 
 ### Setup
 
+*Example expects that you have have generated kubernetes source locally using cli, if not run following commands to use released version of kubeframe.*
+
+```bash
+npm run use-release-version -- --version 1.34
+```
+
 ```bash
 npm install
 ```

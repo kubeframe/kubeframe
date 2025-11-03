@@ -1,13 +1,13 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/k8s";
+import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
 
 interface ProbeSpec {
 
     /**
-     * Authorization section for this endpoint
+     * authorization section for this endpoint
      */
     authorization?: {
       /**
-       * Selects a key of a Secret in the namespace that contains the credentials for authentication.
+       * credentials defines a key of a Secret in the namespace that contains the credentials for authentication.
        */
       credentials?: {
         /**
@@ -28,7 +28,7 @@ interface ProbeSpec {
         optional?: boolean;
       };
       /**
-       * Defines the authentication type. The value is case-insensitive.
+       * type defines the authentication type. The value is case-insensitive.
        *
        * "Basic" is not a supported value.
        *
@@ -38,12 +38,12 @@ interface ProbeSpec {
     };
 
     /**
-     * BasicAuth allow an endpoint to authenticate over basic authentication.
+     * basicAuth allow an endpoint to authenticate over basic authentication.
      * More info: https://prometheus.io/docs/operating/configuration/#endpoint
      */
     basicAuth?: {
       /**
-       * `password` specifies a key of a Secret containing the password for
+       * password defines a key of a Secret containing the password for
        * authentication.
        */
       password?: {
@@ -65,7 +65,7 @@ interface ProbeSpec {
         optional?: boolean;
       };
       /**
-       * `username` specifies a key of a Secret containing the username for
+       * username defines a key of a Secret containing the username for
        * authentication.
        */
       username?: {
@@ -89,7 +89,7 @@ interface ProbeSpec {
     };
 
     /**
-     * Secret to mount to read bearer token for scraping targets. The secret
+     * bearerTokenSecret defines the secret to mount to read bearer token for scraping targets. The secret
      * needs to be in the same namespace as the probe and accessible by
      * the Prometheus Operator.
      */
@@ -113,7 +113,13 @@ interface ProbeSpec {
     };
 
     /**
-     * The protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.
+     * convertClassicHistogramsToNHCB defines whether to convert all scraped classic histograms into a native histogram with custom buckets.
+     * It requires Prometheus >= v3.0.0.
+     */
+    convertClassicHistogramsToNHCB?: boolean;
+
+    /**
+     * fallbackScrapeProtocol defines the protocol to use if a scrape returns blank, unparseable, or otherwise invalid Content-Type.
      *
      * It requires Prometheus >= v3.0.0.
      */
@@ -125,18 +131,18 @@ interface ProbeSpec {
       | "PrometheusText1.0.0";
 
     /**
-     * Interval at which targets are probed using the configured prober.
+     * interval at which targets are probed using the configured prober.
      * If not specified Prometheus' global scrape interval is used.
      */
     interval?: string;
 
     /**
-     * The job name assigned to scraped metrics by default.
+     * jobName assigned to scraped metrics by default.
      */
     jobName?: string;
 
     /**
-     * Per-scrape limit on the number of targets dropped by relabeling
+     * keepDroppedTargets defines the per-scrape limit on the number of targets dropped by relabeling
      * that will be kept in memory. 0 means no limit.
      *
      * It requires Prometheus >= v2.47.0.
@@ -144,29 +150,29 @@ interface ProbeSpec {
     keepDroppedTargets?: number;
 
     /**
-     * Per-scrape limit on number of labels that will be accepted for a sample.
+     * labelLimit defines the per-scrape limit on number of labels that will be accepted for a sample.
      * Only valid in Prometheus versions 2.27.0 and newer.
      */
     labelLimit?: number;
 
     /**
-     * Per-scrape limit on length of labels name that will be accepted for a sample.
+     * labelNameLengthLimit defines the per-scrape limit on length of labels name that will be accepted for a sample.
      * Only valid in Prometheus versions 2.27.0 and newer.
      */
     labelNameLengthLimit?: number;
 
     /**
-     * Per-scrape limit on length of labels value that will be accepted for a sample.
+     * labelValueLengthLimit defines the per-scrape limit on length of labels value that will be accepted for a sample.
      * Only valid in Prometheus versions 2.27.0 and newer.
      */
     labelValueLengthLimit?: number;
 
     /**
-     * MetricRelabelConfigs to apply to samples before ingestion.
+     * metricRelabelings defines the RelabelConfig to apply to samples before ingestion.
      */
     metricRelabelings?: {
       /**
-       * Action to perform based on the regex matching.
+       * action to perform based on the regex matching.
        *
        * `Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
        * `DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
@@ -197,34 +203,34 @@ interface ProbeSpec {
         | "dropequal"
         | "DropEqual";
       /**
-       * Modulus to take of the hash of the source label values.
+       * modulus to take of the hash of the source label values.
        *
        * Only applicable when the action is `HashMod`.
        */
       modulus?: number;
       /**
-       * Regular expression against which the extracted value is matched.
+       * regex defines the regular expression against which the extracted value is matched.
        */
       regex?: string;
       /**
-       * Replacement value against which a Replace action is performed if the
+       * replacement value against which a Replace action is performed if the
        * regular expression matches.
        *
        * Regex capture groups are available.
        */
       replacement?: string;
       /**
-       * Separator is the string between concatenated SourceLabels.
+       * separator defines the string between concatenated SourceLabels.
        */
       separator?: string;
       /**
-       * The source labels select values from existing labels. Their content is
+       * sourceLabels defines the source labels select values from existing labels. Their content is
        * concatenated using the configured Separator and matched against the
        * configured regular expression.
        */
       sourceLabels?: string[];
       /**
-       * Label to which the resulting string is written in a replacement.
+       * targetLabel defines the label to which the resulting string is written in a replacement.
        *
        * It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
        * `KeepEqual` and `DropEqual` actions.
@@ -235,37 +241,37 @@ interface ProbeSpec {
     }[];
 
     /**
-     * The module to use for probing specifying how to probe the target.
+     * module to use for probing specifying how to probe the target.
      * Example module configuring in the blackbox exporter:
      * https://github.com/prometheus/blackbox_exporter/blob/master/example.yml
      */
     module?: string;
 
     /**
-     * If there are more than this many buckets in a native histogram,
+     * nativeHistogramBucketLimit defines ff there are more than this many buckets in a native histogram,
      * buckets will be merged to stay within the limit.
      * It requires Prometheus >= v2.45.0.
      */
     nativeHistogramBucketLimit?: number;
 
     /**
-     * If the growth factor of one bucket to the next is smaller than this,
+     * nativeHistogramMinBucketFactor defines if the growth factor of one bucket to the next is smaller than this,
      * buckets will be merged to increase the factor sufficiently.
      * It requires Prometheus >= v2.50.0.
      */
     nativeHistogramMinBucketFactor?: number | string;
 
     /**
-     * OAuth2 for the URL. Only valid in Prometheus versions 2.27.0 and newer.
+     * oauth2 for the URL. Only valid in Prometheus versions 2.27.0 and newer.
      */
     oauth2?: {
       /**
-       * `clientId` specifies a key of a Secret or ConfigMap containing the
+       * clientId defines a key of a Secret or ConfigMap containing the
        * OAuth2 client's ID.
        */
       clientId: {
         /**
-         * ConfigMap containing data to use for the targets.
+         * configMap defines the ConfigMap containing data to use for the targets.
          */
         configMap?: {
           /**
@@ -286,7 +292,7 @@ interface ProbeSpec {
           optional?: boolean;
         };
         /**
-         * Secret containing data to use for the targets.
+         * secret defines the Secret containing data to use for the targets.
          */
         secret?: {
           /**
@@ -308,7 +314,7 @@ interface ProbeSpec {
         };
       };
       /**
-       * `clientSecret` specifies a key of a Secret containing the OAuth2
+       * clientSecret defines a key of a Secret containing the OAuth2
        * client's secret.
        */
       clientSecret: {
@@ -330,25 +336,25 @@ interface ProbeSpec {
         optional?: boolean;
       };
       /**
-       * `endpointParams` configures the HTTP parameters to append to the token
+       * endpointParams configures the HTTP parameters to append to the token
        * URL.
        */
       endpointParams?: {
         [k: string]: string;
       };
       /**
-       * `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+       * noProxy defines a comma-separated string that can contain IPs, CIDR notation, domain names
        * that should be excluded from proxying. IP and domain names can
        * contain port numbers.
        *
-       * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+       * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
        */
       noProxy?: string;
       /**
-       * ProxyConnectHeader optionally specifies headers to send to
+       * proxyConnectHeader optionally specifies headers to send to
        * proxies during CONNECT requests.
        *
-       * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+       * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
        */
       proxyConnectHeader?: {
         [k: string]: {
@@ -371,30 +377,30 @@ interface ProbeSpec {
         }[];
       };
       /**
-       * Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+       * proxyFromEnvironment defines whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
        *
-       * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+       * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
        */
       proxyFromEnvironment?: boolean;
       /**
-       * `proxyURL` defines the HTTP proxy server to use.
+       * proxyUrl defines the HTTP proxy server to use.
        */
       proxyUrl?: string;
       /**
-       * `scopes` defines the OAuth2 scopes used for the token request.
+       * scopes defines the OAuth2 scopes used for the token request.
        */
       scopes?: string[];
       /**
-       * TLS configuration to use when connecting to the OAuth2 server.
+       * tlsConfig defines the TLS configuration to use when connecting to the OAuth2 server.
        * It requires Prometheus >= v2.43.0.
        */
       tlsConfig?: {
         /**
-         * Certificate authority used when verifying server certificates.
+         * ca defines the Certificate authority used when verifying server certificates.
          */
         ca?: {
           /**
-           * ConfigMap containing data to use for the targets.
+           * configMap defines the ConfigMap containing data to use for the targets.
            */
           configMap?: {
             /**
@@ -415,7 +421,7 @@ interface ProbeSpec {
             optional?: boolean;
           };
           /**
-           * Secret containing data to use for the targets.
+           * secret defines the Secret containing data to use for the targets.
            */
           secret?: {
             /**
@@ -437,11 +443,11 @@ interface ProbeSpec {
           };
         };
         /**
-         * Client certificate to present when doing client-authentication.
+         * cert defines the Client certificate to present when doing client-authentication.
          */
         cert?: {
           /**
-           * ConfigMap containing data to use for the targets.
+           * configMap defines the ConfigMap containing data to use for the targets.
            */
           configMap?: {
             /**
@@ -462,7 +468,7 @@ interface ProbeSpec {
             optional?: boolean;
           };
           /**
-           * Secret containing data to use for the targets.
+           * secret defines the Secret containing data to use for the targets.
            */
           secret?: {
             /**
@@ -484,11 +490,11 @@ interface ProbeSpec {
           };
         };
         /**
-         * Disable target certificate validation.
+         * insecureSkipVerify defines how to disable target certificate validation.
          */
         insecureSkipVerify?: boolean;
         /**
-         * Secret containing the client key file for the targets.
+         * keySecret defines the Secret containing the client key file for the targets.
          */
         keySecret?: {
           /**
@@ -509,72 +515,148 @@ interface ProbeSpec {
           optional?: boolean;
         };
         /**
-         * Maximum acceptable TLS version.
+         * maxVersion defines the maximum acceptable TLS version.
          *
-         * It requires Prometheus >= v2.41.0.
+         * It requires Prometheus >= v2.41.0 or Thanos >= v0.31.0.
          */
         maxVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
         /**
-         * Minimum acceptable TLS version.
+         * minVersion defines the minimum acceptable TLS version.
          *
-         * It requires Prometheus >= v2.35.0.
+         * It requires Prometheus >= v2.35.0 or Thanos >= v0.28.0.
          */
         minVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
         /**
-         * Used to verify the hostname for the targets.
+         * serverName is used to verify the hostname for the targets.
          */
         serverName?: string;
       };
       /**
-       * `tokenURL` configures the URL to fetch the token from.
+       * tokenUrl defines the URL to fetch the token from.
        */
       tokenUrl: string;
     };
 
     /**
-     * Specification for the prober to use for probing targets.
+     * params defines the list of HTTP query parameters for the scrape.
+     * Please note that the `.spec.module` field takes precedence over the `module` parameter from this list when both are defined.
+     * The module name must be added using Module under ProbeSpec.
+     *
+     * @minItems 1
+     */
+    params?: [
+      {
+        /**
+         * name defines the parameter name
+         */
+        name: string;
+        /**
+         * values defines the parameter values
+         *
+         * @minItems 1
+         */
+        values?: [string, ...string[]];
+      },
+      ...{
+        /**
+         * name defines the parameter name
+         */
+        name: string;
+        /**
+         * values defines the parameter values
+         *
+         * @minItems 1
+         */
+        values?: [string, ...string[]];
+      }[]
+    ];
+
+    /**
+     * prober defines the specification for the prober to use for probing targets.
      * The prober.URL parameter is required. Targets cannot be probed if left empty.
      */
     prober?: {
       /**
-       * Path to collect metrics from.
+       * noProxy defines a comma-separated string that can contain IPs, CIDR notation, domain names
+       * that should be excluded from proxying. IP and domain names can
+       * contain port numbers.
+       *
+       * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+       */
+      noProxy?: string;
+      /**
+       * path to collect metrics from.
        * Defaults to `/probe`.
        */
       path?: string;
       /**
-       * Optional ProxyURL.
+       * proxyConnectHeader optionally specifies headers to send to
+       * proxies during CONNECT requests.
+       *
+       * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+       */
+      proxyConnectHeader?: {
+        [k: string]: {
+          /**
+           * The key of the secret to select from.  Must be a valid secret key.
+           */
+          key: string;
+          /**
+           * Name of the referent.
+           * This field is effectively required, but due to backwards compatibility is
+           * allowed to be empty. Instances of this type with an empty value here are
+           * almost certainly wrong.
+           * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+           */
+          name?: string;
+          /**
+           * Specify whether the Secret or its key must be defined
+           */
+          optional?: boolean;
+        }[];
+      };
+      /**
+       * proxyFromEnvironment defines whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+       *
+       * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
+       */
+      proxyFromEnvironment?: boolean;
+      /**
+       * proxyUrl defines the HTTP proxy server to use.
        */
       proxyUrl?: string;
       /**
-       * HTTP scheme to use for scraping.
+       * scheme defines the HTTP scheme to use for scraping.
        * `http` and `https` are the expected values unless you rewrite the `__scheme__` label via relabeling.
        * If empty, Prometheus uses the default value `http`.
        */
       scheme?: "http" | "https";
       /**
-       * Mandatory URL of the prober.
+       * url defines the mandatory URL of the prober.
        */
       url: string;
     };
 
     /**
-     * SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+     * sampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
      */
     sampleLimit?: number;
 
     /**
-     * The scrape class to apply.
+     * scrapeClass defines the scrape class to apply.
      */
     scrapeClass?: string;
 
     /**
-     * Whether to scrape a classic histogram that is also exposed as a native histogram.
+     * scrapeClassicHistograms defines whether to scrape a classic histogram that is also exposed as a native histogram.
      * It requires Prometheus >= v2.45.0.
+     *
+     * Notice: `scrapeClassicHistograms` corresponds to the `always_scrape_classic_histograms` field in the Prometheus configuration.
      */
     scrapeClassicHistograms?: boolean;
 
     /**
-     * `scrapeProtocols` defines the protocols to negotiate during a scrape. It tells clients the
+     * scrapeProtocols defines the protocols to negotiate during a scrape. It tells clients the
      * protocols supported by Prometheus in order of preference (from most to least preferred).
      *
      * If unset, Prometheus uses its default value.
@@ -590,19 +672,19 @@ interface ProbeSpec {
     )[];
 
     /**
-     * Timeout for scraping metrics from the Prometheus exporter.
+     * scrapeTimeout defines the timeout for scraping metrics from the Prometheus exporter.
      * If not specified, the Prometheus global scrape timeout is used.
      * The value cannot be greater than the scrape interval otherwise the operator will reject the resource.
      */
     scrapeTimeout?: string;
 
     /**
-     * TargetLimit defines a limit on the number of scraped targets that will be accepted.
+     * targetLimit defines a limit on the number of scraped targets that will be accepted.
      */
     targetLimit?: number;
 
     /**
-     * Targets defines a set of static or dynamically discovered targets to probe.
+     * targets defines a set of static or dynamically discovered targets to probe.
      */
     targets?: {
       /**
@@ -612,21 +694,21 @@ interface ProbeSpec {
        */
       ingress?: {
         /**
-         * From which namespaces to select Ingress objects.
+         * namespaceSelector defines from which namespaces to select Ingress objects.
          */
         namespaceSelector?: {
           /**
-           * Boolean describing whether all namespaces are selected in contrast to a
+           * any defines the boolean describing whether all namespaces are selected in contrast to a
            * list restricting them.
            */
           any?: boolean;
           /**
-           * List of namespace names to select from.
+           * matchNames defines the list of namespace names to select from.
            */
           matchNames?: string[];
         };
         /**
-         * RelabelConfigs to apply to the label set of the target before it gets
+         * relabelingConfigs to apply to the label set of the target before it gets
          * scraped.
          * The original ingress address is available via the
          * `__tmp_prometheus_ingress_address` label. It can be used to customize the
@@ -636,7 +718,7 @@ interface ProbeSpec {
          */
         relabelingConfigs?: {
           /**
-           * Action to perform based on the regex matching.
+           * action to perform based on the regex matching.
            *
            * `Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
            * `DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
@@ -667,34 +749,34 @@ interface ProbeSpec {
             | "dropequal"
             | "DropEqual";
           /**
-           * Modulus to take of the hash of the source label values.
+           * modulus to take of the hash of the source label values.
            *
            * Only applicable when the action is `HashMod`.
            */
           modulus?: number;
           /**
-           * Regular expression against which the extracted value is matched.
+           * regex defines the regular expression against which the extracted value is matched.
            */
           regex?: string;
           /**
-           * Replacement value against which a Replace action is performed if the
+           * replacement value against which a Replace action is performed if the
            * regular expression matches.
            *
            * Regex capture groups are available.
            */
           replacement?: string;
           /**
-           * Separator is the string between concatenated SourceLabels.
+           * separator defines the string between concatenated SourceLabels.
            */
           separator?: string;
           /**
-           * The source labels select values from existing labels. Their content is
+           * sourceLabels defines the source labels select values from existing labels. Their content is
            * concatenated using the configured Separator and matched against the
            * configured regular expression.
            */
           sourceLabels?: string[];
           /**
-           * Label to which the resulting string is written in a replacement.
+           * targetLabel defines the label to which the resulting string is written in a replacement.
            *
            * It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
            * `KeepEqual` and `DropEqual` actions.
@@ -704,7 +786,7 @@ interface ProbeSpec {
           targetLabel?: string;
         }[];
         /**
-         * Selector to select the Ingress objects.
+         * selector to select the Ingress objects.
          */
         selector?: {
           /**
@@ -746,19 +828,19 @@ interface ProbeSpec {
        */
       staticConfig?: {
         /**
-         * Labels assigned to all metrics scraped from the targets.
+         * labels defines all labels assigned to all metrics scraped from the targets.
          */
         labels?: {
           [k: string]: string;
         };
         /**
-         * RelabelConfigs to apply to the label set of the targets before it gets
+         * relabelingConfigs defines relabelings to be apply to the label set of the targets before it gets
          * scraped.
          * More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
          */
         relabelingConfigs?: {
           /**
-           * Action to perform based on the regex matching.
+           * action to perform based on the regex matching.
            *
            * `Uppercase` and `Lowercase` actions require Prometheus >= v2.36.0.
            * `DropEqual` and `KeepEqual` actions require Prometheus >= v2.41.0.
@@ -789,34 +871,34 @@ interface ProbeSpec {
             | "dropequal"
             | "DropEqual";
           /**
-           * Modulus to take of the hash of the source label values.
+           * modulus to take of the hash of the source label values.
            *
            * Only applicable when the action is `HashMod`.
            */
           modulus?: number;
           /**
-           * Regular expression against which the extracted value is matched.
+           * regex defines the regular expression against which the extracted value is matched.
            */
           regex?: string;
           /**
-           * Replacement value against which a Replace action is performed if the
+           * replacement value against which a Replace action is performed if the
            * regular expression matches.
            *
            * Regex capture groups are available.
            */
           replacement?: string;
           /**
-           * Separator is the string between concatenated SourceLabels.
+           * separator defines the string between concatenated SourceLabels.
            */
           separator?: string;
           /**
-           * The source labels select values from existing labels. Their content is
+           * sourceLabels defines the source labels select values from existing labels. Their content is
            * concatenated using the configured Separator and matched against the
            * configured regular expression.
            */
           sourceLabels?: string[];
           /**
-           * Label to which the resulting string is written in a replacement.
+           * targetLabel defines the label to which the resulting string is written in a replacement.
            *
            * It is mandatory for `Replace`, `HashMod`, `Lowercase`, `Uppercase`,
            * `KeepEqual` and `DropEqual` actions.
@@ -826,22 +908,22 @@ interface ProbeSpec {
           targetLabel?: string;
         }[];
         /**
-         * The list of hosts to probe.
+         * static defines the list of hosts to probe.
          */
         static?: string[];
       };
     };
 
     /**
-     * TLS configuration to use when scraping the endpoint.
+     * tlsConfig defines the TLS configuration to use when scraping the endpoint.
      */
     tlsConfig?: {
       /**
-       * Certificate authority used when verifying server certificates.
+       * ca defines the Certificate authority used when verifying server certificates.
        */
       ca?: {
         /**
-         * ConfigMap containing data to use for the targets.
+         * configMap defines the ConfigMap containing data to use for the targets.
          */
         configMap?: {
           /**
@@ -862,7 +944,7 @@ interface ProbeSpec {
           optional?: boolean;
         };
         /**
-         * Secret containing data to use for the targets.
+         * secret defines the Secret containing data to use for the targets.
          */
         secret?: {
           /**
@@ -884,11 +966,11 @@ interface ProbeSpec {
         };
       };
       /**
-       * Client certificate to present when doing client-authentication.
+       * cert defines the Client certificate to present when doing client-authentication.
        */
       cert?: {
         /**
-         * ConfigMap containing data to use for the targets.
+         * configMap defines the ConfigMap containing data to use for the targets.
          */
         configMap?: {
           /**
@@ -909,7 +991,7 @@ interface ProbeSpec {
           optional?: boolean;
         };
         /**
-         * Secret containing data to use for the targets.
+         * secret defines the Secret containing data to use for the targets.
          */
         secret?: {
           /**
@@ -931,11 +1013,11 @@ interface ProbeSpec {
         };
       };
       /**
-       * Disable target certificate validation.
+       * insecureSkipVerify defines how to disable target certificate validation.
        */
       insecureSkipVerify?: boolean;
       /**
-       * Secret containing the client key file for the targets.
+       * keySecret defines the Secret containing the client key file for the targets.
        */
       keySecret?: {
         /**
@@ -956,19 +1038,19 @@ interface ProbeSpec {
         optional?: boolean;
       };
       /**
-       * Maximum acceptable TLS version.
+       * maxVersion defines the maximum acceptable TLS version.
        *
-       * It requires Prometheus >= v2.41.0.
+       * It requires Prometheus >= v2.41.0 or Thanos >= v0.31.0.
        */
       maxVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
       /**
-       * Minimum acceptable TLS version.
+       * minVersion defines the minimum acceptable TLS version.
        *
-       * It requires Prometheus >= v2.35.0.
+       * It requires Prometheus >= v2.35.0 or Thanos >= v0.28.0.
        */
       minVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
       /**
-       * Used to verify the hostname for the targets.
+       * serverName is used to verify the hostname for the targets.
        */
       serverName?: string;
     };
@@ -992,16 +1074,82 @@ interface ProbeSpec {
 export interface ProbeArgs {
   metadata: k8s.meta.v1.NamespacedObjectMeta;
   /**
-   * Specification of desired Ingress selection for target discovery by Prometheus.
+   * spec defines the specification of desired Ingress selection for target discovery by Prometheus.
    */
   spec: ProbeSpec;
+  /**
+   * status defines the status subresource. It is under active development and is updated only when the
+   * "StatusForConfigurationResources" feature gate is enabled.
+   *
+   * Most recent observed status of the Probe. Read-only.
+   * More info:
+   * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+   */
+  status?: {
+    /**
+     * bindings defines the list of workload resources (Prometheus, PrometheusAgent, ThanosRuler or Alertmanager) which select the configuration resource.
+     */
+    bindings?: {
+      /**
+       * conditions defines the current state of the configuration resource when bound to the referenced Workload object.
+       */
+      conditions?: {
+        /**
+         * lastTransitionTime defines the time of the last update to the current status property.
+         */
+        lastTransitionTime: string;
+        /**
+         * message defines the human-readable message indicating details for the condition's last transition.
+         */
+        message?: string;
+        /**
+         * observedGeneration defines the .metadata.generation that the
+         * condition was set based upon. For instance, if `.metadata.generation` is
+         * currently 12, but the `.status.conditions[].observedGeneration` is 9, the
+         * condition is out of date with respect to the current state of the object.
+         */
+        observedGeneration?: number;
+        /**
+         * reason for the condition's last transition.
+         */
+        reason?: string;
+        /**
+         * status of the condition.
+         */
+        status: string;
+        /**
+         * type of the condition being reported.
+         * Currently, only "Accepted" is supported.
+         */
+        type: "Accepted";
+      }[];
+      /**
+       * group defines the group of the referenced resource.
+       */
+      group: "monitoring.coreos.com";
+      /**
+       * name defines the name of the referenced object.
+       */
+      name: string;
+      /**
+       * namespace defines the namespace of the referenced object.
+       */
+      namespace: string;
+      /**
+       * resource defines the type of resource being referenced (e.g. Prometheus, PrometheusAgent, ThanosRuler or Alertmanager).
+       */
+      resource: "prometheuses" | "prometheusagents" | "thanosrulers" | "alertmanagers";
+    }[];
+  };
 }
 
 export class Probe extends NamespacedAPIResource {
     spec: ProbeSpec;
+    status?: { bindings?: { conditions?: { lastTransitionTime: string; message?: string; observedGeneration?: number; reason?: string; status: string; type: "Accepted"; }[]; group: "monitoring.coreos.com"; name: string; namespace: string; resource: "prometheuses" | "prometheusagents" | "thanosrulers" | "alertmanagers"; }[]; };
 
     constructor(args: ProbeArgs) {
         super('monitoring.coreos.com/v1', 'Probe', args.metadata);
         this.spec = args.spec;
+        this.status = args.status;
     }
 }

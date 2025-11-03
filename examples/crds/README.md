@@ -11,6 +11,12 @@ This example demonstrates how to generate and use CRD classes in a project.
 
 ### Setup
 
+*Example expects that you have have generated kubernetes source locally using cli, if not run following commands to use released version of kubeframe.*
+
+```bash
+npm run use-release-version -- --version 1.34
+```
+
 ```bash
 npm install
 ```

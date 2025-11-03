@@ -1,7 +1,7 @@
 import { execSync } from "child_process";
-import { Frame } from "./frame.js";
-import { ResourceCollector } from "./resourceCollector.js";
-import { APIResourceFactory } from "@kubeframe/k8s";
+import { Frame } from "./Frame.js";
+import { ResourceCollector } from "./ResourceCollector.js";
+import { APIResourceFactory } from "./base/APIResourceFactory.js";
 import * as YAML from 'yaml';
 
 export interface HelmOptions {

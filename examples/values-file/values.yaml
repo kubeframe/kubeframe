@@ -1,7 +1,6 @@
 # yaml-language-server: $schema=./schema.json
 deployments:
   - name: my-deployment
-    replicas: 3
     containers:
       - name: my-container
       - name: with-resources
@@ -12,3 +11,11 @@ deployments:
           requests:
             cpu: 0.5
             memory: 500Mi
+services:
+  - name: my-service
+    selector:
+      app: my-deployment
+    ports:
+      - name: http
+        port: 80
+        targetPort: http

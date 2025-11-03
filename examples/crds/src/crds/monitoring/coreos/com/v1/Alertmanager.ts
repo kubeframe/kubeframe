@@ -1,14 +1,32 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/k8s";
+import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
 
 interface AlertmanagerSpec {
 
     /**
-     * AdditionalPeers allows injecting a set of additional Alertmanagers to peer with to form a highly available cluster.
+     * additionalArgs allows setting additional arguments for the 'Alertmanager' container.
+     * It is intended for e.g. activating hidden flags which are not supported by
+     * the dedicated configuration options yet. The arguments are passed as-is to the
+     * Alertmanager container which may cause issues if they are invalid or not supported
+     * by the given Alertmanager version.
+     */
+    additionalArgs?: {
+      /**
+       * name of the argument, e.g. "scrape.discovery-reload-interval".
+       */
+      name: string;
+      /**
+       * value defines the argument value, e.g. 30s. Can be empty for name-only arguments (e.g. --storage.tsdb.no-lockfile)
+       */
+      value?: string;
+    }[];
+
+    /**
+     * additionalPeers allows injecting a set of additional Alertmanagers to peer with to form a highly available cluster.
      */
     additionalPeers?: string[];
 
     /**
-     * If specified, the pod's scheduling constraints.
+     * affinity defines the pod's scheduling constraints.
      */
     affinity?: {
       /**
@@ -204,7 +222,6 @@ interface AlertmanagerSpec {
              * pod labels will be ignored. The default value is empty.
              * The same key is forbidden to exist in both matchLabelKeys and labelSelector.
              * Also, matchLabelKeys cannot be set when labelSelector isn't set.
-             * This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
              */
             matchLabelKeys?: string[];
             /**
@@ -216,7 +233,6 @@ interface AlertmanagerSpec {
              * pod labels will be ignored. The default value is empty.
              * The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
              * Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-             * This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
              */
             mismatchLabelKeys?: string[];
             /**
@@ -333,7 +349,6 @@ interface AlertmanagerSpec {
            * pod labels will be ignored. The default value is empty.
            * The same key is forbidden to exist in both matchLabelKeys and labelSelector.
            * Also, matchLabelKeys cannot be set when labelSelector isn't set.
-           * This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
            */
           matchLabelKeys?: string[];
           /**
@@ -345,7 +360,6 @@ interface AlertmanagerSpec {
            * pod labels will be ignored. The default value is empty.
            * The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
            * Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-           * This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
            */
           mismatchLabelKeys?: string[];
           /**
@@ -414,8 +428,8 @@ interface AlertmanagerSpec {
          * most preferred is the one with the greatest sum of weights, i.e.
          * for each node that meets all of the scheduling requirements (resource
          * request, requiredDuringScheduling anti-affinity expressions, etc.),
-         * compute a sum by iterating through the elements of this field and adding
-         * "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the
+         * compute a sum by iterating through the elements of this field and subtracting
+         * "weight" from the sum if the node has pods which matches the corresponding podAffinityTerm; the
          * node(s) with the highest sum are the most preferred.
          */
         preferredDuringSchedulingIgnoredDuringExecution?: {
@@ -467,7 +481,6 @@ interface AlertmanagerSpec {
              * pod labels will be ignored. The default value is empty.
              * The same key is forbidden to exist in both matchLabelKeys and labelSelector.
              * Also, matchLabelKeys cannot be set when labelSelector isn't set.
-             * This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
              */
             matchLabelKeys?: string[];
             /**
@@ -479,7 +492,6 @@ interface AlertmanagerSpec {
              * pod labels will be ignored. The default value is empty.
              * The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
              * Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-             * This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
              */
             mismatchLabelKeys?: string[];
             /**
@@ -596,7 +608,6 @@ interface AlertmanagerSpec {
            * pod labels will be ignored. The default value is empty.
            * The same key is forbidden to exist in both matchLabelKeys and labelSelector.
            * Also, matchLabelKeys cannot be set when labelSelector isn't set.
-           * This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
            */
           matchLabelKeys?: string[];
           /**
@@ -608,7 +619,6 @@ interface AlertmanagerSpec {
            * pod labels will be ignored. The default value is empty.
            * The same key is forbidden to exist in both mismatchLabelKeys and labelSelector.
            * Also, mismatchLabelKeys cannot be set when labelSelector isn't set.
-           * This is a beta field and requires enabling MatchLabelKeysInPodAffinity feature gate (enabled by default).
            */
           mismatchLabelKeys?: string[];
           /**
@@ -669,22 +679,22 @@ interface AlertmanagerSpec {
     };
 
     /**
-     * AlertmanagerConfigMatcherStrategy defines how AlertmanagerConfig objects
+     * alertmanagerConfigMatcherStrategy defines how AlertmanagerConfig objects
      * process incoming alerts.
      */
     alertmanagerConfigMatcherStrategy?: {
       /**
-       * AlertmanagerConfigMatcherStrategyType defines the strategy used by
+       * type defines the strategy used by
        * AlertmanagerConfig objects to match alerts in the routes and inhibition
        * rules.
        *
        * The default value is `OnNamespace`.
        */
-      type?: "OnNamespace" | "None";
+      type?: "OnNamespace" | "OnNamespaceExceptForAlertmanagerNamespace" | "None";
     };
 
     /**
-     * Namespaces to be selected for AlertmanagerConfig discovery. If nil, only
+     * alertmanagerConfigNamespaceSelector defines the namespaces to be selected for AlertmanagerConfig discovery. If nil, only
      * check own namespace.
      */
     alertmanagerConfigNamespaceSelector?: {
@@ -720,7 +730,7 @@ interface AlertmanagerSpec {
     };
 
     /**
-     * AlertmanagerConfigs to be selected for to merge and configure Alertmanager with.
+     * alertmanagerConfigSelector defines the selector to be used for to merge and configure Alertmanager with.
      */
     alertmanagerConfigSelector?: {
       /**
@@ -755,7 +765,7 @@ interface AlertmanagerSpec {
     };
 
     /**
-     * alertmanagerConfiguration specifies the configuration of Alertmanager.
+     * alertmanagerConfiguration defines the configuration of Alertmanager.
      *
      * If defined, it takes precedence over the `configSecret` field.
      *
@@ -764,20 +774,22 @@ interface AlertmanagerSpec {
      */
     alertmanagerConfiguration?: {
       /**
-       * Defines the global parameters of the Alertmanager configuration.
+       * global defines the global parameters of the Alertmanager configuration.
        */
       global?: {
         /**
-         * HTTP client configuration.
+         * httpConfig defines the default HTTP configuration.
          */
         httpConfig?: {
           /**
-           * Authorization header configuration for the client.
-           * This is mutually exclusive with BasicAuth and is only available starting from Alertmanager v0.22+.
+           * authorization configures the Authorization header credentials used by
+           * the client.
+           *
+           * Cannot be set at the same time as `basicAuth`, `bearerTokenSecret` or `oauth2`.
            */
           authorization?: {
             /**
-             * Selects a key of a Secret in the namespace that contains the credentials for authentication.
+             * credentials defines a key of a Secret in the namespace that contains the credentials for authentication.
              */
             credentials?: {
               /**
@@ -798,7 +810,7 @@ interface AlertmanagerSpec {
               optional?: boolean;
             };
             /**
-             * Defines the authentication type. The value is case-insensitive.
+             * type defines the authentication type. The value is case-insensitive.
              *
              * "Basic" is not a supported value.
              *
@@ -807,12 +819,14 @@ interface AlertmanagerSpec {
             type?: string;
           };
           /**
-           * BasicAuth for the client.
-           * This is mutually exclusive with Authorization. If both are defined, BasicAuth takes precedence.
+           * basicAuth defines the Basic Authentication credentials used by the
+           * client.
+           *
+           * Cannot be set at the same time as `authorization`, `bearerTokenSecret` or `oauth2`.
            */
           basicAuth?: {
             /**
-             * `password` specifies a key of a Secret containing the password for
+             * password defines a key of a Secret containing the password for
              * authentication.
              */
             password?: {
@@ -834,7 +848,7 @@ interface AlertmanagerSpec {
               optional?: boolean;
             };
             /**
-             * `username` specifies a key of a Secret containing the username for
+             * username defines a key of a Secret containing the username for
              * authentication.
              */
             username?: {
@@ -857,10 +871,14 @@ interface AlertmanagerSpec {
             };
           };
           /**
-           * The secret's key that contains the bearer token to be used by the client
-           * for authentication.
-           * The secret needs to be in the same namespace as the Alertmanager
-           * object and accessible by the Prometheus Operator.
+           * bearerTokenSecret defines a key of a Secret containing the bearer token
+           * used by the client for authentication. The secret needs to be in the
+           * same namespace as the custom resource and readable by the Prometheus
+           * Operator.
+           *
+           * Cannot be set at the same time as `authorization`, `basicAuth` or `oauth2`.
+           *
+           * Deprecated: use `authorization` instead.
            */
           bearerTokenSecret?: {
             /**
@@ -881,28 +899,37 @@ interface AlertmanagerSpec {
             optional?: boolean;
           };
           /**
-           * FollowRedirects specifies whether the client should follow HTTP 3xx redirects.
+           * enableHttp2 can be used to disable HTTP2.
+           */
+          enableHttp2?: boolean;
+          /**
+           * followRedirects defines whether the client should follow HTTP 3xx
+           * redirects.
            */
           followRedirects?: boolean;
           /**
-           * `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+           * noProxy defines a comma-separated string that can contain IPs, CIDR notation, domain names
            * that should be excluded from proxying. IP and domain names can
            * contain port numbers.
            *
-           * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+           * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
            */
           noProxy?: string;
           /**
-           * OAuth2 client credentials used to fetch a token for the targets.
+           * oauth2 defines the OAuth2 settings used by the client.
+           *
+           * It requires Prometheus >= 2.27.0.
+           *
+           * Cannot be set at the same time as `authorization`, `basicAuth` or `bearerTokenSecret`.
            */
           oauth2?: {
             /**
-             * `clientId` specifies a key of a Secret or ConfigMap containing the
+             * clientId defines a key of a Secret or ConfigMap containing the
              * OAuth2 client's ID.
              */
             clientId: {
               /**
-               * ConfigMap containing data to use for the targets.
+               * configMap defines the ConfigMap containing data to use for the targets.
                */
               configMap?: {
                 /**
@@ -923,7 +950,7 @@ interface AlertmanagerSpec {
                 optional?: boolean;
               };
               /**
-               * Secret containing data to use for the targets.
+               * secret defines the Secret containing data to use for the targets.
                */
               secret?: {
                 /**
@@ -945,7 +972,7 @@ interface AlertmanagerSpec {
               };
             };
             /**
-             * `clientSecret` specifies a key of a Secret containing the OAuth2
+             * clientSecret defines a key of a Secret containing the OAuth2
              * client's secret.
              */
             clientSecret: {
@@ -967,25 +994,25 @@ interface AlertmanagerSpec {
               optional?: boolean;
             };
             /**
-             * `endpointParams` configures the HTTP parameters to append to the token
+             * endpointParams configures the HTTP parameters to append to the token
              * URL.
              */
             endpointParams?: {
               [k: string]: string;
             };
             /**
-             * `noProxy` is a comma-separated string that can contain IPs, CIDR notation, domain names
+             * noProxy defines a comma-separated string that can contain IPs, CIDR notation, domain names
              * that should be excluded from proxying. IP and domain names can
              * contain port numbers.
              *
-             * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+             * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
              */
             noProxy?: string;
             /**
-             * ProxyConnectHeader optionally specifies headers to send to
+             * proxyConnectHeader optionally specifies headers to send to
              * proxies during CONNECT requests.
              *
-             * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+             * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
              */
             proxyConnectHeader?: {
               [k: string]: {
@@ -1008,30 +1035,30 @@ interface AlertmanagerSpec {
               }[];
             };
             /**
-             * Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+             * proxyFromEnvironment defines whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
              *
-             * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+             * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
              */
             proxyFromEnvironment?: boolean;
             /**
-             * `proxyURL` defines the HTTP proxy server to use.
+             * proxyUrl defines the HTTP proxy server to use.
              */
             proxyUrl?: string;
             /**
-             * `scopes` defines the OAuth2 scopes used for the token request.
+             * scopes defines the OAuth2 scopes used for the token request.
              */
             scopes?: string[];
             /**
-             * TLS configuration to use when connecting to the OAuth2 server.
+             * tlsConfig defines the TLS configuration to use when connecting to the OAuth2 server.
              * It requires Prometheus >= v2.43.0.
              */
             tlsConfig?: {
               /**
-               * Certificate authority used when verifying server certificates.
+               * ca defines the Certificate authority used when verifying server certificates.
                */
               ca?: {
                 /**
-                 * ConfigMap containing data to use for the targets.
+                 * configMap defines the ConfigMap containing data to use for the targets.
                  */
                 configMap?: {
                   /**
@@ -1052,7 +1079,7 @@ interface AlertmanagerSpec {
                   optional?: boolean;
                 };
                 /**
-                 * Secret containing data to use for the targets.
+                 * secret defines the Secret containing data to use for the targets.
                  */
                 secret?: {
                   /**
@@ -1074,11 +1101,11 @@ interface AlertmanagerSpec {
                 };
               };
               /**
-               * Client certificate to present when doing client-authentication.
+               * cert defines the Client certificate to present when doing client-authentication.
                */
               cert?: {
                 /**
-                 * ConfigMap containing data to use for the targets.
+                 * configMap defines the ConfigMap containing data to use for the targets.
                  */
                 configMap?: {
                   /**
@@ -1099,7 +1126,7 @@ interface AlertmanagerSpec {
                   optional?: boolean;
                 };
                 /**
-                 * Secret containing data to use for the targets.
+                 * secret defines the Secret containing data to use for the targets.
                  */
                 secret?: {
                   /**
@@ -1121,11 +1148,11 @@ interface AlertmanagerSpec {
                 };
               };
               /**
-               * Disable target certificate validation.
+               * insecureSkipVerify defines how to disable target certificate validation.
                */
               insecureSkipVerify?: boolean;
               /**
-               * Secret containing the client key file for the targets.
+               * keySecret defines the Secret containing the client key file for the targets.
                */
               keySecret?: {
                 /**
@@ -1146,32 +1173,32 @@ interface AlertmanagerSpec {
                 optional?: boolean;
               };
               /**
-               * Maximum acceptable TLS version.
+               * maxVersion defines the maximum acceptable TLS version.
                *
-               * It requires Prometheus >= v2.41.0.
+               * It requires Prometheus >= v2.41.0 or Thanos >= v0.31.0.
                */
               maxVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
               /**
-               * Minimum acceptable TLS version.
+               * minVersion defines the minimum acceptable TLS version.
                *
-               * It requires Prometheus >= v2.35.0.
+               * It requires Prometheus >= v2.35.0 or Thanos >= v0.28.0.
                */
               minVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
               /**
-               * Used to verify the hostname for the targets.
+               * serverName is used to verify the hostname for the targets.
                */
               serverName?: string;
             };
             /**
-             * `tokenURL` configures the URL to fetch the token from.
+             * tokenUrl defines the URL to fetch the token from.
              */
             tokenUrl: string;
           };
           /**
-           * ProxyConnectHeader optionally specifies headers to send to
+           * proxyConnectHeader optionally specifies headers to send to
            * proxies during CONNECT requests.
            *
-           * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+           * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
            */
           proxyConnectHeader?: {
             [k: string]: {
@@ -1194,25 +1221,25 @@ interface AlertmanagerSpec {
             }[];
           };
           /**
-           * Whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
+           * proxyFromEnvironment defines whether to use the proxy configuration defined by environment variables (HTTP_PROXY, HTTPS_PROXY, and NO_PROXY).
            *
-           * It requires Prometheus >= v2.43.0 or Alertmanager >= 0.25.0.
+           * It requires Prometheus >= v2.43.0, Alertmanager >= v0.25.0 or Thanos >= v0.32.0.
            */
           proxyFromEnvironment?: boolean;
           /**
-           * `proxyURL` defines the HTTP proxy server to use.
+           * proxyUrl defines the HTTP proxy server to use.
            */
           proxyUrl?: string;
           /**
-           * TLS configuration for the client.
+           * tlsConfig defines the TLS configuration used by the client.
            */
           tlsConfig?: {
             /**
-             * Certificate authority used when verifying server certificates.
+             * ca defines the Certificate authority used when verifying server certificates.
              */
             ca?: {
               /**
-               * ConfigMap containing data to use for the targets.
+               * configMap defines the ConfigMap containing data to use for the targets.
                */
               configMap?: {
                 /**
@@ -1233,7 +1260,7 @@ interface AlertmanagerSpec {
                 optional?: boolean;
               };
               /**
-               * Secret containing data to use for the targets.
+               * secret defines the Secret containing data to use for the targets.
                */
               secret?: {
                 /**
@@ -1255,11 +1282,11 @@ interface AlertmanagerSpec {
               };
             };
             /**
-             * Client certificate to present when doing client-authentication.
+             * cert defines the Client certificate to present when doing client-authentication.
              */
             cert?: {
               /**
-               * ConfigMap containing data to use for the targets.
+               * configMap defines the ConfigMap containing data to use for the targets.
                */
               configMap?: {
                 /**
@@ -1280,7 +1307,7 @@ interface AlertmanagerSpec {
                 optional?: boolean;
               };
               /**
-               * Secret containing data to use for the targets.
+               * secret defines the Secret containing data to use for the targets.
                */
               secret?: {
                 /**
@@ -1302,11 +1329,11 @@ interface AlertmanagerSpec {
               };
             };
             /**
-             * Disable target certificate validation.
+             * insecureSkipVerify defines how to disable target certificate validation.
              */
             insecureSkipVerify?: boolean;
             /**
-             * Secret containing the client key file for the targets.
+             * keySecret defines the Secret containing the client key file for the targets.
              */
             keySecret?: {
               /**
@@ -1327,25 +1354,36 @@ interface AlertmanagerSpec {
               optional?: boolean;
             };
             /**
-             * Maximum acceptable TLS version.
+             * maxVersion defines the maximum acceptable TLS version.
              *
-             * It requires Prometheus >= v2.41.0.
+             * It requires Prometheus >= v2.41.0 or Thanos >= v0.31.0.
              */
             maxVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
             /**
-             * Minimum acceptable TLS version.
+             * minVersion defines the minimum acceptable TLS version.
              *
-             * It requires Prometheus >= v2.35.0.
+             * It requires Prometheus >= v2.35.0 or Thanos >= v0.28.0.
              */
             minVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
             /**
-             * Used to verify the hostname for the targets.
+             * serverName is used to verify the hostname for the targets.
              */
             serverName?: string;
           };
         };
         /**
-         * The default OpsGenie API Key.
+         * jira defines the default configuration for Jira.
+         */
+        jira?: {
+          /**
+           * apiURL defines the default Jira API URL.
+           *
+           * It requires Alertmanager >= v0.28.0.
+           */
+          apiURL?: string;
+        };
+        /**
+         * opsGenieApiKey defines the default OpsGenie API Key.
          */
         opsGenieApiKey?: {
           /**
@@ -1366,7 +1404,7 @@ interface AlertmanagerSpec {
           optional?: boolean;
         };
         /**
-         * The default OpsGenie API URL.
+         * opsGenieApiUrl defines the default OpsGenie API URL.
          */
         opsGenieApiUrl?: {
           /**
@@ -1387,17 +1425,74 @@ interface AlertmanagerSpec {
           optional?: boolean;
         };
         /**
-         * The default Pagerduty URL.
+         * pagerdutyUrl defines the default Pagerduty URL.
          */
         pagerdutyUrl?: string;
         /**
-         * ResolveTimeout is the default value used by alertmanager if the alert does
+         * resolveTimeout defines the default value used by alertmanager if the alert does
          * not include EndsAt, after this time passes it can declare the alert as resolved if it has not been updated.
          * This has no impact on alerts from Prometheus, as they always include EndsAt.
          */
         resolveTimeout?: string;
         /**
-         * The default Slack API URL.
+         * rocketChat defines the default configuration for Rocket Chat.
+         */
+        rocketChat?: {
+          /**
+           * apiURL defines the default Rocket Chat API URL.
+           *
+           * It requires Alertmanager >= v0.28.0.
+           */
+          apiURL?: string;
+          /**
+           * token defines the default Rocket Chat token.
+           *
+           * It requires Alertmanager >= v0.28.0.
+           */
+          token?: {
+            /**
+             * The key of the secret to select from.  Must be a valid secret key.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the Secret or its key must be defined
+             */
+            optional?: boolean;
+          };
+          /**
+           * tokenID defines the default Rocket Chat Token ID.
+           *
+           * It requires Alertmanager >= v0.28.0.
+           */
+          tokenID?: {
+            /**
+             * The key of the secret to select from.  Must be a valid secret key.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the Secret or its key must be defined
+             */
+            optional?: boolean;
+          };
+        };
+        /**
+         * slackApiUrl defines the default Slack API URL.
          */
         slackApiUrl?: {
           /**
@@ -1418,15 +1513,15 @@ interface AlertmanagerSpec {
           optional?: boolean;
         };
         /**
-         * Configures global SMTP parameters.
+         * smtp defines global SMTP parameters.
          */
         smtp?: {
           /**
-           * SMTP Auth using PLAIN
+           * authIdentity represents SMTP Auth using PLAIN
            */
           authIdentity?: string;
           /**
-           * SMTP Auth using LOGIN and PLAIN.
+           * authPassword represents SMTP Auth using LOGIN and PLAIN.
            */
           authPassword?: {
             /**
@@ -1447,7 +1542,7 @@ interface AlertmanagerSpec {
             optional?: boolean;
           };
           /**
-           * SMTP Auth using CRAM-MD5.
+           * authSecret represents SMTP Auth using CRAM-MD5.
            */
           authSecret?: {
             /**
@@ -1468,49 +1563,276 @@ interface AlertmanagerSpec {
             optional?: boolean;
           };
           /**
-           * SMTP Auth using CRAM-MD5, LOGIN and PLAIN. If empty, Alertmanager doesn't authenticate to the SMTP server.
+           * authUsername represents SMTP Auth using CRAM-MD5, LOGIN and PLAIN. If empty, Alertmanager doesn't authenticate to the SMTP server.
            */
           authUsername?: string;
           /**
-           * The default SMTP From header field.
+           * from defines the default SMTP From header field.
            */
           from?: string;
           /**
-           * The default hostname to identify to the SMTP server.
+           * hello defines the default hostname to identify to the SMTP server.
            */
           hello?: string;
           /**
-           * The default SMTP TLS requirement.
+           * requireTLS defines the default SMTP TLS requirement.
            * Note that Go does not support unencrypted connections to remote SMTP endpoints.
            */
           requireTLS?: boolean;
           /**
-           * The default SMTP smarthost used for sending emails.
+           * smartHost defines the default SMTP smarthost used for sending emails.
            */
           smartHost?: {
             /**
-             * Defines the host's address, it can be a DNS name or a literal IP address.
+             * host defines the host's address, it can be a DNS name or a literal IP address.
              */
             host: string;
             /**
-             * Defines the host's port, it can be a literal port number or a port name.
+             * port defines the host's port, it can be a literal port number or a port name.
              */
             port: string;
           };
+          /**
+           * tlsConfig defines the default TLS configuration for SMTP receivers
+           */
+          tlsConfig?: {
+            /**
+             * ca defines the Certificate authority used when verifying server certificates.
+             */
+            ca?: {
+              /**
+               * configMap defines the ConfigMap containing data to use for the targets.
+               */
+              configMap?: {
+                /**
+                 * The key to select.
+                 */
+                key: string;
+                /**
+                 * Name of the referent.
+                 * This field is effectively required, but due to backwards compatibility is
+                 * allowed to be empty. Instances of this type with an empty value here are
+                 * almost certainly wrong.
+                 * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                 */
+                name?: string;
+                /**
+                 * Specify whether the ConfigMap or its key must be defined
+                 */
+                optional?: boolean;
+              };
+              /**
+               * secret defines the Secret containing data to use for the targets.
+               */
+              secret?: {
+                /**
+                 * The key of the secret to select from.  Must be a valid secret key.
+                 */
+                key: string;
+                /**
+                 * Name of the referent.
+                 * This field is effectively required, but due to backwards compatibility is
+                 * allowed to be empty. Instances of this type with an empty value here are
+                 * almost certainly wrong.
+                 * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                 */
+                name?: string;
+                /**
+                 * Specify whether the Secret or its key must be defined
+                 */
+                optional?: boolean;
+              };
+            };
+            /**
+             * cert defines the Client certificate to present when doing client-authentication.
+             */
+            cert?: {
+              /**
+               * configMap defines the ConfigMap containing data to use for the targets.
+               */
+              configMap?: {
+                /**
+                 * The key to select.
+                 */
+                key: string;
+                /**
+                 * Name of the referent.
+                 * This field is effectively required, but due to backwards compatibility is
+                 * allowed to be empty. Instances of this type with an empty value here are
+                 * almost certainly wrong.
+                 * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                 */
+                name?: string;
+                /**
+                 * Specify whether the ConfigMap or its key must be defined
+                 */
+                optional?: boolean;
+              };
+              /**
+               * secret defines the Secret containing data to use for the targets.
+               */
+              secret?: {
+                /**
+                 * The key of the secret to select from.  Must be a valid secret key.
+                 */
+                key: string;
+                /**
+                 * Name of the referent.
+                 * This field is effectively required, but due to backwards compatibility is
+                 * allowed to be empty. Instances of this type with an empty value here are
+                 * almost certainly wrong.
+                 * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                 */
+                name?: string;
+                /**
+                 * Specify whether the Secret or its key must be defined
+                 */
+                optional?: boolean;
+              };
+            };
+            /**
+             * insecureSkipVerify defines how to disable target certificate validation.
+             */
+            insecureSkipVerify?: boolean;
+            /**
+             * keySecret defines the Secret containing the client key file for the targets.
+             */
+            keySecret?: {
+              /**
+               * The key of the secret to select from.  Must be a valid secret key.
+               */
+              key: string;
+              /**
+               * Name of the referent.
+               * This field is effectively required, but due to backwards compatibility is
+               * allowed to be empty. Instances of this type with an empty value here are
+               * almost certainly wrong.
+               * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+               */
+              name?: string;
+              /**
+               * Specify whether the Secret or its key must be defined
+               */
+              optional?: boolean;
+            };
+            /**
+             * maxVersion defines the maximum acceptable TLS version.
+             *
+             * It requires Prometheus >= v2.41.0 or Thanos >= v0.31.0.
+             */
+            maxVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
+            /**
+             * minVersion defines the minimum acceptable TLS version.
+             *
+             * It requires Prometheus >= v2.35.0 or Thanos >= v0.28.0.
+             */
+            minVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
+            /**
+             * serverName is used to verify the hostname for the targets.
+             */
+            serverName?: string;
+          };
+        };
+        /**
+         * telegram defines the default Telegram config
+         */
+        telegram?: {
+          /**
+           * apiURL defines he default Telegram API URL.
+           *
+           * It requires Alertmanager >= v0.24.0.
+           */
+          apiURL?: string;
+        };
+        /**
+         * victorops defines the default configuration for VictorOps.
+         */
+        victorops?: {
+          /**
+           * apiKey defines the default VictorOps API Key.
+           */
+          apiKey?: {
+            /**
+             * The key of the secret to select from.  Must be a valid secret key.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the Secret or its key must be defined
+             */
+            optional?: boolean;
+          };
+          /**
+           * apiURL defines the default VictorOps API URL.
+           */
+          apiURL?: string;
+        };
+        /**
+         * webex defines the default configuration for Jira.
+         */
+        webex?: {
+          /**
+           * apiURL defines the is the default Webex API URL.
+           *
+           * It requires Alertmanager >= v0.25.0.
+           */
+          apiURL?: string;
+        };
+        /**
+         * wechat defines the default WeChat Config
+         */
+        wechat?: {
+          /**
+           * apiCorpID defines the default WeChat API Corporate ID.
+           */
+          apiCorpID?: string;
+          /**
+           * apiSecret defines the default WeChat API Secret.
+           */
+          apiSecret?: {
+            /**
+             * The key of the secret to select from.  Must be a valid secret key.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the Secret or its key must be defined
+             */
+            optional?: boolean;
+          };
+          /**
+           * apiURL defines he default WeChat API URL.
+           * The default value is "https://qyapi.weixin.qq.com/cgi-bin/"
+           */
+          apiURL?: string;
         };
       };
       /**
-       * The name of the AlertmanagerConfig resource which is used to generate the Alertmanager configuration.
+       * name defines the name of the AlertmanagerConfig custom resource which is used to generate the Alertmanager configuration.
        * It must be defined in the same namespace as the Alertmanager object.
        * The operator will not enforce a `namespace` label for routes and inhibition rules.
        */
       name?: string;
       /**
-       * Custom notification templates.
+       * templates defines the custom notification templates.
        */
       templates?: {
         /**
-         * ConfigMap containing data to use for the targets.
+         * configMap defines the ConfigMap containing data to use for the targets.
          */
         configMap?: {
           /**
@@ -1531,7 +1853,7 @@ interface AlertmanagerSpec {
           optional?: boolean;
         };
         /**
-         * Secret containing data to use for the targets.
+         * secret defines the Secret containing data to use for the targets.
          */
         secret?: {
           /**
@@ -1555,47 +1877,388 @@ interface AlertmanagerSpec {
     };
 
     /**
-     * AutomountServiceAccountToken indicates whether a service account token should be automatically mounted in the pod.
+     * automountServiceAccountToken defines whether a service account token should be automatically mounted in the pod.
      * If the service account has `automountServiceAccountToken: true`, set the field to `false` to opt out of automounting API credentials.
      */
     automountServiceAccountToken?: boolean;
 
     /**
-     * Base image that is used to deploy pods, without tag.
+     * baseImage that is used to deploy pods, without tag.
      * Deprecated: use 'image' instead.
      */
     baseImage?: string;
 
     /**
-     * ClusterAdvertiseAddress is the explicit address to advertise in cluster.
+     * clusterAdvertiseAddress defines the explicit address to advertise in cluster.
      * Needs to be provided for non RFC1918 [1] (public) addresses.
      * [1] RFC1918: https://tools.ietf.org/html/rfc1918
      */
     clusterAdvertiseAddress?: string;
 
     /**
-     * Interval between gossip attempts.
+     * clusterGossipInterval defines the interval between gossip attempts.
      */
     clusterGossipInterval?: string;
 
     /**
-     * Defines the identifier that uniquely identifies the Alertmanager cluster.
+     * clusterLabel defines the identifier that uniquely identifies the Alertmanager cluster.
      * You should only set it when the Alertmanager cluster includes Alertmanager instances which are external to this Alertmanager resource. In practice, the addresses of the external instances are provided via the `.spec.additionalPeers` field.
      */
     clusterLabel?: string;
 
     /**
-     * Timeout for cluster peering.
+     * clusterPeerTimeout defines the timeout for cluster peering.
      */
     clusterPeerTimeout?: string;
 
     /**
-     * Interval between pushpull attempts.
+     * clusterPushpullInterval defines the interval between pushpull attempts.
      */
     clusterPushpullInterval?: string;
 
     /**
-     * ConfigMaps is a list of ConfigMaps in the same namespace as the Alertmanager
+     * clusterTLS defines the mutual TLS configuration for the Alertmanager cluster's gossip protocol.
+     *
+     * It requires Alertmanager >= 0.24.0.
+     */
+    clusterTLS?: {
+      /**
+       * client defines the client-side configuration for mutual TLS.
+       */
+      client: {
+        /**
+         * ca defines the Certificate authority used when verifying server certificates.
+         */
+        ca?: {
+          /**
+           * configMap defines the ConfigMap containing data to use for the targets.
+           */
+          configMap?: {
+            /**
+             * The key to select.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the ConfigMap or its key must be defined
+             */
+            optional?: boolean;
+          };
+          /**
+           * secret defines the Secret containing data to use for the targets.
+           */
+          secret?: {
+            /**
+             * The key of the secret to select from.  Must be a valid secret key.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the Secret or its key must be defined
+             */
+            optional?: boolean;
+          };
+        };
+        /**
+         * cert defines the Client certificate to present when doing client-authentication.
+         */
+        cert?: {
+          /**
+           * configMap defines the ConfigMap containing data to use for the targets.
+           */
+          configMap?: {
+            /**
+             * The key to select.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the ConfigMap or its key must be defined
+             */
+            optional?: boolean;
+          };
+          /**
+           * secret defines the Secret containing data to use for the targets.
+           */
+          secret?: {
+            /**
+             * The key of the secret to select from.  Must be a valid secret key.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the Secret or its key must be defined
+             */
+            optional?: boolean;
+          };
+        };
+        /**
+         * insecureSkipVerify defines how to disable target certificate validation.
+         */
+        insecureSkipVerify?: boolean;
+        /**
+         * keySecret defines the Secret containing the client key file for the targets.
+         */
+        keySecret?: {
+          /**
+           * The key of the secret to select from.  Must be a valid secret key.
+           */
+          key: string;
+          /**
+           * Name of the referent.
+           * This field is effectively required, but due to backwards compatibility is
+           * allowed to be empty. Instances of this type with an empty value here are
+           * almost certainly wrong.
+           * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+           */
+          name?: string;
+          /**
+           * Specify whether the Secret or its key must be defined
+           */
+          optional?: boolean;
+        };
+        /**
+         * maxVersion defines the maximum acceptable TLS version.
+         *
+         * It requires Prometheus >= v2.41.0 or Thanos >= v0.31.0.
+         */
+        maxVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
+        /**
+         * minVersion defines the minimum acceptable TLS version.
+         *
+         * It requires Prometheus >= v2.35.0 or Thanos >= v0.28.0.
+         */
+        minVersion?: "TLS10" | "TLS11" | "TLS12" | "TLS13";
+        /**
+         * serverName is used to verify the hostname for the targets.
+         */
+        serverName?: string;
+      };
+      /**
+       * server defines the server-side configuration for mutual TLS.
+       */
+      server: {
+        /**
+         * cert defines the Secret or ConfigMap containing the TLS certificate for the web server.
+         *
+         * Either `keySecret` or `keyFile` must be defined.
+         *
+         * It is mutually exclusive with `certFile`.
+         */
+        cert?: {
+          /**
+           * configMap defines the ConfigMap containing data to use for the targets.
+           */
+          configMap?: {
+            /**
+             * The key to select.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the ConfigMap or its key must be defined
+             */
+            optional?: boolean;
+          };
+          /**
+           * secret defines the Secret containing data to use for the targets.
+           */
+          secret?: {
+            /**
+             * The key of the secret to select from.  Must be a valid secret key.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the Secret or its key must be defined
+             */
+            optional?: boolean;
+          };
+        };
+        /**
+         * certFile defines the path to the TLS certificate file in the container for the web server.
+         *
+         * Either `keySecret` or `keyFile` must be defined.
+         *
+         * It is mutually exclusive with `cert`.
+         */
+        certFile?: string;
+        /**
+         * cipherSuites defines the list of supported cipher suites for TLS versions up to TLS 1.2.
+         *
+         * If not defined, the Go default cipher suites are used.
+         * Available cipher suites are documented in the Go documentation:
+         * https://golang.org/pkg/crypto/tls/#pkg-constants
+         */
+        cipherSuites?: string[];
+        /**
+         * client_ca defines the Secret or ConfigMap containing the CA certificate for client certificate
+         * authentication to the server.
+         *
+         * It is mutually exclusive with `clientCAFile`.
+         */
+        client_ca?: {
+          /**
+           * configMap defines the ConfigMap containing data to use for the targets.
+           */
+          configMap?: {
+            /**
+             * The key to select.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the ConfigMap or its key must be defined
+             */
+            optional?: boolean;
+          };
+          /**
+           * secret defines the Secret containing data to use for the targets.
+           */
+          secret?: {
+            /**
+             * The key of the secret to select from.  Must be a valid secret key.
+             */
+            key: string;
+            /**
+             * Name of the referent.
+             * This field is effectively required, but due to backwards compatibility is
+             * allowed to be empty. Instances of this type with an empty value here are
+             * almost certainly wrong.
+             * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+             */
+            name?: string;
+            /**
+             * Specify whether the Secret or its key must be defined
+             */
+            optional?: boolean;
+          };
+        };
+        /**
+         * clientAuthType defines the server policy for client TLS authentication.
+         *
+         * For more detail on clientAuth options:
+         * https://golang.org/pkg/crypto/tls/#ClientAuthType
+         */
+        clientAuthType?: string;
+        /**
+         * clientCAFile defines the path to the CA certificate file for client certificate authentication to
+         * the server.
+         *
+         * It is mutually exclusive with `client_ca`.
+         */
+        clientCAFile?: string;
+        /**
+         * curvePreferences defines elliptic curves that will be used in an ECDHE handshake, in preference
+         * order.
+         *
+         * Available curves are documented in the Go documentation:
+         * https://golang.org/pkg/crypto/tls/#CurveID
+         */
+        curvePreferences?: string[];
+        /**
+         * keyFile defines the path to the TLS private key file in the container for the web server.
+         *
+         * If defined, either `cert` or `certFile` must be defined.
+         *
+         * It is mutually exclusive with `keySecret`.
+         */
+        keyFile?: string;
+        /**
+         * keySecret defines the secret containing the TLS private key for the web server.
+         *
+         * Either `cert` or `certFile` must be defined.
+         *
+         * It is mutually exclusive with `keyFile`.
+         */
+        keySecret?: {
+          /**
+           * The key of the secret to select from.  Must be a valid secret key.
+           */
+          key: string;
+          /**
+           * Name of the referent.
+           * This field is effectively required, but due to backwards compatibility is
+           * allowed to be empty. Instances of this type with an empty value here are
+           * almost certainly wrong.
+           * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+           */
+          name?: string;
+          /**
+           * Specify whether the Secret or its key must be defined
+           */
+          optional?: boolean;
+        };
+        /**
+         * maxVersion defines the Maximum TLS version that is acceptable.
+         */
+        maxVersion?: string;
+        /**
+         * minVersion defines the minimum TLS version that is acceptable.
+         */
+        minVersion?: string;
+        /**
+         * preferServerCipherSuites defines whether the server selects the client's most preferred cipher
+         * suite, or the server's most preferred cipher suite.
+         *
+         * If true then the server's preference, as expressed in
+         * the order of elements in cipherSuites, is used.
+         */
+        preferServerCipherSuites?: boolean;
+      };
+    };
+
+    /**
+     * configMaps defines a list of ConfigMaps in the same namespace as the Alertmanager
      * object, which shall be mounted into the Alertmanager Pods.
      * Each ConfigMap is added to the StatefulSet definition as a volume named `configmap-<configmap-name>`.
      * The ConfigMaps are mounted into `/etc/alertmanager/configmaps/<configmap-name>` in the 'alertmanager' container.
@@ -1603,7 +2266,7 @@ interface AlertmanagerSpec {
     configMaps?: string[];
 
     /**
-     * ConfigSecret is the name of a Kubernetes Secret in the same namespace as the
+     * configSecret defines the name of a Kubernetes Secret in the same namespace as the
      * Alertmanager object, which contains the configuration for this Alertmanager
      * instance. If empty, it defaults to `alertmanager-<alertmanager-name>`.
      *
@@ -1619,7 +2282,7 @@ interface AlertmanagerSpec {
     configSecret?: string;
 
     /**
-     * Containers allows injecting additional containers. This is meant to
+     * containers allows injecting additional containers. This is meant to
      * allow adding an authentication proxy to an Alertmanager pod.
      * Containers described here modify an operator generated container if they
      * share the same name and modifications are done via a strategic merge
@@ -1657,7 +2320,8 @@ interface AlertmanagerSpec {
        */
       env?: {
         /**
-         * Name of the environment variable. Must be a C_IDENTIFIER.
+         * Name of the environment variable.
+         * May consist of any printable ASCII characters except '='.
          */
         name: string;
         /**
@@ -1712,6 +2376,37 @@ interface AlertmanagerSpec {
             fieldPath: string;
           };
           /**
+           * FileKeyRef selects a key of the env file.
+           * Requires the EnvFiles feature gate to be enabled.
+           */
+          fileKeyRef?: {
+            /**
+             * The key within the env file. An invalid key will prevent the pod from starting.
+             * The keys defined within a source may consist of any printable ASCII characters except '='.
+             * During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+             */
+            key: string;
+            /**
+             * Specify whether the file or its key must be defined. If the file or key
+             * does not exist, then the env var is not published.
+             * If optional is set to true and the specified key does not exist,
+             * the environment variable will not be set in the Pod's containers.
+             *
+             * If optional is set to false and the specified key does not exist,
+             * an error will be returned during Pod creation.
+             */
+            optional?: boolean;
+            /**
+             * The path within the volume from which to select the file.
+             * Must be relative and may not contain the '..' path or start with '..'.
+             */
+            path: string;
+            /**
+             * The name of the volume mount containing the env file.
+             */
+            volumeName: string;
+          };
+          /**
            * Selects a resource of the container: only resources limits and requests
            * (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
            */
@@ -1754,8 +2449,8 @@ interface AlertmanagerSpec {
       }[];
       /**
        * List of sources to populate environment variables in the container.
-       * The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-       * will be reported as an event when the container is starting. When a key exists in multiple
+       * The keys defined within a source may consist of any printable ASCII characters except '='.
+       * When a key exists in multiple
        * sources, the value associated with the last source will take precedence.
        * Values defined by an Env with a duplicate key will take precedence.
        * Cannot be updated.
@@ -1779,7 +2474,8 @@ interface AlertmanagerSpec {
           optional?: boolean;
         };
         /**
-         * An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.
+         * Optional text to prepend to the name of each environment variable.
+         * May consist of any printable ASCII characters except '='.
          */
         prefix?: string;
         /**
@@ -1997,6 +2693,12 @@ interface AlertmanagerSpec {
             port: number | string;
           };
         };
+        /**
+         * StopSignal defines which signal will be sent to a container when it is being stopped.
+         * If not specified, the default is defined by the container runtime in use.
+         * StopSignal can only be set for Pods with a non-empty .spec.os.name
+         */
+        stopSignal?: string;
       };
       /**
        * Periodic probe of container liveness.
@@ -2327,7 +3029,7 @@ interface AlertmanagerSpec {
          * Claims lists the names of resources, defined in spec.resourceClaims,
          * that are used by this container.
          *
-         * This is an alpha field and requires enabling the
+         * This field depends on the
          * DynamicResourceAllocation feature gate.
          *
          * This field is immutable. It can only be set for containers.
@@ -2365,10 +3067,10 @@ interface AlertmanagerSpec {
       };
       /**
        * RestartPolicy defines the restart behavior of individual containers in a pod.
-       * This field may only be set for init containers, and the only allowed value is "Always".
-       * For non-init containers or when this field is not specified,
+       * This overrides the pod-level restart policy. When this field is not specified,
        * the restart behavior is defined by the Pod's restart policy and the container type.
-       * Setting the RestartPolicy as "Always" for the init container will have the following effect:
+       * Additionally, setting the RestartPolicy as "Always" for the init container will
+       * have the following effect:
        * this init container will be continually restarted on
        * exit until all regular containers have terminated. Once all regular
        * containers have completed, all init containers with restartPolicy "Always"
@@ -2381,6 +3083,46 @@ interface AlertmanagerSpec {
        * completed.
        */
       restartPolicy?: string;
+      /**
+       * Represents a list of rules to be checked to determine if the
+       * container should be restarted on exit. The rules are evaluated in
+       * order. Once a rule matches a container exit condition, the remaining
+       * rules are ignored. If no rule matches the container exit condition,
+       * the Container-level restart policy determines the whether the container
+       * is restarted or not. Constraints on the rules:
+       * - At most 20 rules are allowed.
+       * - Rules can have the same action.
+       * - Identical rules are not forbidden in validations.
+       * When rules are specified, container MUST set RestartPolicy explicitly
+       * even it if matches the Pod's RestartPolicy.
+       */
+      restartPolicyRules?: {
+        /**
+         * Specifies the action taken on a container exit if the requirements
+         * are satisfied. The only possible value is "Restart" to restart the
+         * container.
+         */
+        action: string;
+        /**
+         * Represents the exit codes to check on container exits.
+         */
+        exitCodes?: {
+          /**
+           * Represents the relationship between the container exit code(s) and the
+           * specified values. Possible values are:
+           * - In: the requirement is satisfied if the container exit code is in the
+           *   set of specified values.
+           * - NotIn: the requirement is satisfied if the container exit code is
+           *   not in the set of specified values.
+           */
+          operator: string;
+          /**
+           * Specifies the set of values to check for container exit codes.
+           * At most 255 elements are allowed.
+           */
+          values?: number[];
+        };
+      }[];
       /**
        * SecurityContext defines the security options the container should be run with.
        * If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
@@ -2819,44 +3561,44 @@ interface AlertmanagerSpec {
     }[];
 
     /**
-     * Defines the DNS configuration for the pods.
+     * dnsConfig defines the DNS configuration for the pods.
      */
     dnsConfig?: {
       /**
-       * A list of DNS name server IP addresses.
+       * nameservers defines the list of DNS name server IP addresses.
        * This will be appended to the base nameservers generated from DNSPolicy.
        */
       nameservers?: string[];
       /**
-       * A list of DNS resolver options.
+       * options defines the list of DNS resolver options.
        * This will be merged with the base options generated from DNSPolicy.
        * Resolution options given in Options
        * will override those that appear in the base DNSPolicy.
        */
       options?: {
         /**
-         * Name is required and must be unique.
+         * name is required and must be unique.
          */
         name: string;
         /**
-         * Value is optional.
+         * value is optional.
          */
         value?: string;
       }[];
       /**
-       * A list of DNS search domains for host-name lookup.
+       * searches defines the list of DNS search domains for host-name lookup.
        * This will be appended to the base search paths generated from DNSPolicy.
        */
       searches?: string[];
     };
 
     /**
-     * Defines the DNS policy for the pods.
+     * dnsPolicy defines the DNS policy for the pods.
      */
     dnsPolicy?: "ClusterFirstWithHostNet" | "ClusterFirst" | "Default" | "None";
 
     /**
-     * Enable access to Alertmanager feature flags. By default, no features are enabled.
+     * enableFeatures defines the Alertmanager's feature flags. By default, no features are enabled.
      * Enabling features which are disabled by default is entirely outside the
      * scope of what the maintainers will support and by doing so, you accept
      * that this behaviour may break at any time without notice.
@@ -2866,34 +3608,49 @@ interface AlertmanagerSpec {
     enableFeatures?: string[];
 
     /**
-     * The external URL the Alertmanager instances will be available under. This is
+     * enableServiceLinks defines whether information about services should be injected into pod's environment variables
+     */
+    enableServiceLinks?: boolean;
+
+    /**
+     * externalUrl defines the URL used to access the Alertmanager web service. This is
      * necessary to generate correct URLs. This is necessary if Alertmanager is not
      * served from root of a DNS name.
      */
     externalUrl?: string;
 
     /**
-     * ForceEnableClusterMode ensures Alertmanager does not deactivate the cluster mode when running with a single replica.
+     * forceEnableClusterMode ensures Alertmanager does not deactivate the cluster mode when running with a single replica.
      * Use case is e.g. spanning an Alertmanager cluster across Kubernetes clusters with a single replica in each.
      */
     forceEnableClusterMode?: boolean;
 
     /**
-     * Pods' hostAliases configuration
+     * hostAliases Pods configuration
      */
     hostAliases?: {
       /**
-       * Hostnames for the above IP address.
+       * hostnames defines hostnames for the above IP address.
        */
       hostnames: string[];
       /**
-       * IP address of the host file entry.
+       * ip defines the IP address of the host file entry.
        */
       ip: string;
     }[];
 
     /**
-     * Image if specified has precedence over baseImage, tag and sha
+     * hostUsers supports the user space in Kubernetes.
+     *
+     * More info: https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/
+     *
+     * The feature requires at least Kubernetes 1.28 with the `UserNamespacesSupport` feature gate enabled.
+     * Starting Kubernetes 1.33, the feature is enabled by default.
+     */
+    hostUsers?: boolean;
+
+    /**
+     * image if specified has precedence over baseImage, tag and sha
      * combinations. Specifying the version is still necessary to ensure the
      * Prometheus Operator knows what version of Alertmanager is being
      * configured.
@@ -2901,15 +3658,15 @@ interface AlertmanagerSpec {
     image?: string;
 
     /**
-     * Image pull policy for the 'alertmanager', 'init-config-reloader' and 'config-reloader' containers.
+     * imagePullPolicy for the 'alertmanager', 'init-config-reloader' and 'config-reloader' containers.
      * See https://kubernetes.io/docs/concepts/containers/images/#image-pull-policy for more details.
      */
     imagePullPolicy?: "" | "Always" | "Never" | "IfNotPresent";
 
     /**
-     * An optional list of references to secrets in the same namespace
+     * imagePullSecrets An optional list of references to secrets in the same namespace
      * to use for pulling prometheus and alertmanager images from registries
-     * see http://kubernetes.io/docs/user-guide/images#specifying-imagepullsecrets-on-a-pod
+     * see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
      */
     imagePullSecrets?: {
       /**
@@ -2923,7 +3680,7 @@ interface AlertmanagerSpec {
     }[];
 
     /**
-     * InitContainers allows adding initContainers to the pod definition. Those can be used to e.g.
+     * initContainers allows adding initContainers to the pod definition. Those can be used to e.g.
      * fetch secrets for injection into the Alertmanager configuration from external sources. Any
      * errors during the execution of an initContainer will lead to a restart of the Pod. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
      * InitContainers described here modify an operator
@@ -2962,7 +3719,8 @@ interface AlertmanagerSpec {
        */
       env?: {
         /**
-         * Name of the environment variable. Must be a C_IDENTIFIER.
+         * Name of the environment variable.
+         * May consist of any printable ASCII characters except '='.
          */
         name: string;
         /**
@@ -3017,6 +3775,37 @@ interface AlertmanagerSpec {
             fieldPath: string;
           };
           /**
+           * FileKeyRef selects a key of the env file.
+           * Requires the EnvFiles feature gate to be enabled.
+           */
+          fileKeyRef?: {
+            /**
+             * The key within the env file. An invalid key will prevent the pod from starting.
+             * The keys defined within a source may consist of any printable ASCII characters except '='.
+             * During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.
+             */
+            key: string;
+            /**
+             * Specify whether the file or its key must be defined. If the file or key
+             * does not exist, then the env var is not published.
+             * If optional is set to true and the specified key does not exist,
+             * the environment variable will not be set in the Pod's containers.
+             *
+             * If optional is set to false and the specified key does not exist,
+             * an error will be returned during Pod creation.
+             */
+            optional?: boolean;
+            /**
+             * The path within the volume from which to select the file.
+             * Must be relative and may not contain the '..' path or start with '..'.
+             */
+            path: string;
+            /**
+             * The name of the volume mount containing the env file.
+             */
+            volumeName: string;
+          };
+          /**
            * Selects a resource of the container: only resources limits and requests
            * (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.
            */
@@ -3059,8 +3848,8 @@ interface AlertmanagerSpec {
       }[];
       /**
        * List of sources to populate environment variables in the container.
-       * The keys defined within a source must be a C_IDENTIFIER. All invalid keys
-       * will be reported as an event when the container is starting. When a key exists in multiple
+       * The keys defined within a source may consist of any printable ASCII characters except '='.
+       * When a key exists in multiple
        * sources, the value associated with the last source will take precedence.
        * Values defined by an Env with a duplicate key will take precedence.
        * Cannot be updated.
@@ -3084,7 +3873,8 @@ interface AlertmanagerSpec {
           optional?: boolean;
         };
         /**
-         * An optional identifier to prepend to each key in the ConfigMap. Must be a C_IDENTIFIER.
+         * Optional text to prepend to the name of each environment variable.
+         * May consist of any printable ASCII characters except '='.
          */
         prefix?: string;
         /**
@@ -3302,6 +4092,12 @@ interface AlertmanagerSpec {
             port: number | string;
           };
         };
+        /**
+         * StopSignal defines which signal will be sent to a container when it is being stopped.
+         * If not specified, the default is defined by the container runtime in use.
+         * StopSignal can only be set for Pods with a non-empty .spec.os.name
+         */
+        stopSignal?: string;
       };
       /**
        * Periodic probe of container liveness.
@@ -3632,7 +4428,7 @@ interface AlertmanagerSpec {
          * Claims lists the names of resources, defined in spec.resourceClaims,
          * that are used by this container.
          *
-         * This is an alpha field and requires enabling the
+         * This field depends on the
          * DynamicResourceAllocation feature gate.
          *
          * This field is immutable. It can only be set for containers.
@@ -3670,10 +4466,10 @@ interface AlertmanagerSpec {
       };
       /**
        * RestartPolicy defines the restart behavior of individual containers in a pod.
-       * This field may only be set for init containers, and the only allowed value is "Always".
-       * For non-init containers or when this field is not specified,
+       * This overrides the pod-level restart policy. When this field is not specified,
        * the restart behavior is defined by the Pod's restart policy and the container type.
-       * Setting the RestartPolicy as "Always" for the init container will have the following effect:
+       * Additionally, setting the RestartPolicy as "Always" for the init container will
+       * have the following effect:
        * this init container will be continually restarted on
        * exit until all regular containers have terminated. Once all regular
        * containers have completed, all init containers with restartPolicy "Always"
@@ -3686,6 +4482,46 @@ interface AlertmanagerSpec {
        * completed.
        */
       restartPolicy?: string;
+      /**
+       * Represents a list of rules to be checked to determine if the
+       * container should be restarted on exit. The rules are evaluated in
+       * order. Once a rule matches a container exit condition, the remaining
+       * rules are ignored. If no rule matches the container exit condition,
+       * the Container-level restart policy determines the whether the container
+       * is restarted or not. Constraints on the rules:
+       * - At most 20 rules are allowed.
+       * - Rules can have the same action.
+       * - Identical rules are not forbidden in validations.
+       * When rules are specified, container MUST set RestartPolicy explicitly
+       * even it if matches the Pod's RestartPolicy.
+       */
+      restartPolicyRules?: {
+        /**
+         * Specifies the action taken on a container exit if the requirements
+         * are satisfied. The only possible value is "Restart" to restart the
+         * container.
+         */
+        action: string;
+        /**
+         * Represents the exit codes to check on container exits.
+         */
+        exitCodes?: {
+          /**
+           * Represents the relationship between the container exit code(s) and the
+           * specified values. Possible values are:
+           * - In: the requirement is satisfied if the container exit code is in the
+           *   set of specified values.
+           * - NotIn: the requirement is satisfied if the container exit code is
+           *   not in the set of specified values.
+           */
+          operator: string;
+          /**
+           * Specifies the set of values to check for container exit codes.
+           * At most 255 elements are allowed.
+           */
+          values?: number[];
+        };
+      }[];
       /**
        * SecurityContext defines the security options the container should be run with.
        * If set, the fields of SecurityContext override the equivalent fields of PodSecurityContext.
@@ -4124,45 +4960,63 @@ interface AlertmanagerSpec {
     }[];
 
     /**
-     * ListenLocal makes the Alertmanager server listen on loopback, so that it
+     * limits defines the limits command line flags when starting Alertmanager.
+     */
+    limits?: {
+      /**
+       * maxPerSilenceBytes defines the maximum size of an individual silence as stored on disk. This corresponds to the Alertmanager's
+       * `--silences.max-per-silence-bytes` flag.
+       * It requires Alertmanager >= v0.28.0.
+       */
+      maxPerSilenceBytes?: string;
+      /**
+       * maxSilences defines the maximum number active and pending silences. This corresponds to the
+       * Alertmanager's `--silences.max-silences` flag.
+       * It requires Alertmanager >= v0.28.0.
+       */
+      maxSilences?: number;
+    };
+
+    /**
+     * listenLocal defines the Alertmanager server listen on loopback, so that it
      * does not bind against the Pod IP. Note this is only for the Alertmanager
      * UI, not the gossip communication.
      */
     listenLocal?: boolean;
 
     /**
-     * Log format for Alertmanager to be configured with.
+     * logFormat for Alertmanager to be configured with.
      */
     logFormat?: "" | "logfmt" | "json";
 
     /**
-     * Log level for Alertmanager to be configured with.
+     * logLevel for Alertmanager to be configured with.
      */
     logLevel?: "" | "debug" | "info" | "warn" | "error";
 
     /**
-     * Minimum number of seconds for which a newly created pod should be ready
+     * minReadySeconds defines the minimum number of seconds for which a newly created pod should be ready
      * without any of its container crashing for it to be considered available.
-     * Defaults to 0 (pod will be considered available as soon as it is ready)
-     * This is an alpha field from kubernetes 1.22 until 1.24 which requires enabling the StatefulSetMinReadySeconds feature gate.
+     *
+     * If unset, pods will be considered available as soon as they are ready.
      */
     minReadySeconds?: number;
 
     /**
-     * Define which Nodes the Pods are scheduled on.
+     * nodeSelector defines which Nodes the Pods are scheduled on.
      */
     nodeSelector?: {
       [k: string]: string;
     };
 
     /**
-     * If set to true all actions on the underlying managed objects are not
-     * goint to be performed, except for delete actions.
+     * paused if set to true all actions on the underlying managed objects are not
+     * going to be performed, except for delete actions.
      */
     paused?: boolean;
 
     /**
-     * The field controls if and how PVCs are deleted during the lifecycle of a StatefulSet.
+     * persistentVolumeClaimRetentionPolicy controls if and how PVCs are deleted during the lifecycle of a StatefulSet.
      * The default behavior is all PVCs are retained.
      * This is an alpha field from kubernetes 1.23 until 1.26 and a beta field from 1.26.
      * It requires enabling the StatefulSetAutoDeletePVC feature gate.
@@ -4186,7 +5040,7 @@ interface AlertmanagerSpec {
     };
 
     /**
-     * PodMetadata configures labels and annotations which are propagated to the Alertmanager pods.
+     * podMetadata defines labels and annotations which are propagated to the Alertmanager pods.
      *
      * The following items are reserved and cannot be overridden:
      * * "alertmanager" label, set to the name of the Alertmanager instance.
@@ -4198,61 +5052,61 @@ interface AlertmanagerSpec {
      */
     podMetadata?: {
       /**
-       * Annotations is an unstructured key value map stored with a resource that may be
+       * annotations defines an unstructured key value map stored with a resource that may be
        * set by external tools to store and retrieve arbitrary metadata. They are not
        * queryable and should be preserved when modifying objects.
-       * More info: http://kubernetes.io/docs/user-guide/annotations
+       * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
        */
       annotations?: {
         [k: string]: string;
       };
       /**
-       * Map of string keys and values that can be used to organize and categorize
+       * labels define the map of string keys and values that can be used to organize and categorize
        * (scope and select) objects. May match selectors of replication controllers
        * and services.
-       * More info: http://kubernetes.io/docs/user-guide/labels
+       * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
        */
       labels?: {
         [k: string]: string;
       };
       /**
-       * Name must be unique within a namespace. Is required when creating resources, although
+       * name must be unique within a namespace. Is required when creating resources, although
        * some resources may allow a client to request the generation of an appropriate name
        * automatically. Name is primarily intended for creation idempotence and configuration
        * definition.
        * Cannot be updated.
-       * More info: http://kubernetes.io/docs/user-guide/identifiers#names
+       * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
        */
       name?: string;
     };
 
     /**
-     * Port name used for the pods and governing service.
+     * portName defines the port's name for the pods and governing service.
      * Defaults to `web`.
      */
     portName?: string;
 
     /**
-     * Priority class assigned to the Pods
+     * priorityClassName assigned to the Pods
      */
     priorityClassName?: string;
 
     /**
-     * Size is the expected size of the alertmanager cluster. The controller will
+     * replicas defines the expected size of the alertmanager cluster. The controller will
      * eventually make the size of the running cluster equal to the expected
      * size.
      */
     replicas?: number;
 
     /**
-     * Define resources requests and limits for single Pods.
+     * resources defines the resource requests and limits of the Pods.
      */
     resources?: {
       /**
        * Claims lists the names of resources, defined in spec.resourceClaims,
        * that are used by this container.
        *
-       * This is an alpha field and requires enabling the
+       * This field depends on the
        * DynamicResourceAllocation feature gate.
        *
        * This field is immutable. It can only be set for containers.
@@ -4290,13 +5144,13 @@ interface AlertmanagerSpec {
     };
 
     /**
-     * Time duration Alertmanager shall retain data for. Default is '120h',
+     * retention defines the time duration Alertmanager shall retain data for. Default is '120h',
      * and must match the regular expression `[0-9]+(ms|s|m|h)` (milliseconds seconds minutes hours).
      */
     retention?: string;
 
     /**
-     * The route prefix Alertmanager registers HTTP handlers for. This is useful,
+     * routePrefix Alertmanager registers HTTP handlers for. This is useful,
      * if using ExternalURL and a proxy is rewriting HTTP routes of a request,
      * and the actual ExternalURL is still true, but the server serves requests
      * under a different route prefix. For example for use with `kubectl proxy`.
@@ -4304,7 +5158,7 @@ interface AlertmanagerSpec {
     routePrefix?: string;
 
     /**
-     * Secrets is a list of Secrets in the same namespace as the Alertmanager
+     * secrets is a list of Secrets in the same namespace as the Alertmanager
      * object, which shall be mounted into the Alertmanager Pods.
      * Each Secret is added to the StatefulSet definition as a volume named `secret-<secret-name>`.
      * The Secrets are mounted into `/etc/alertmanager/secrets/<secret-name>` in the 'alertmanager' container.
@@ -4312,7 +5166,7 @@ interface AlertmanagerSpec {
     secrets?: string[];
 
     /**
-     * SecurityContext holds pod-level security attributes and common container settings.
+     * securityContext holds pod-level security attributes and common container settings.
      * This defaults to the default PodSecurityContext.
      */
     securityContext?: {
@@ -4531,13 +5385,22 @@ interface AlertmanagerSpec {
     };
 
     /**
-     * ServiceAccountName is the name of the ServiceAccount to use to run the
+     * serviceAccountName is the name of the ServiceAccount to use to run the
      * Prometheus Pods.
      */
     serviceAccountName?: string;
 
     /**
-     * SHA of Alertmanager container image to be deployed. Defaults to the value of `version`.
+     * serviceName defines the service name used by the underlying StatefulSet(s) as the governing service.
+     * If defined, the Service  must be created before the Alertmanager resource in the same namespace and it must define a selector that matches the pod labels.
+     * If empty, the operator will create and manage a headless service named `alertmanager-operated` for Alertmanager resources.
+     * When deploying multiple Alertmanager resources in the same namespace, it is recommended to specify a different value for each.
+     * See https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#stable-network-id for more details.
+     */
+    serviceName?: string;
+
+    /**
+     * sha of Alertmanager container image to be deployed. Defaults to the value of `version`.
      * Similar to a tag, but the SHA explicitly deploys an immutable container image.
      * Version and Tag are ignored if SHA is set.
      * Deprecated: use 'image' instead. The image digest can be specified as part of the image URL.
@@ -4545,16 +5408,16 @@ interface AlertmanagerSpec {
     sha?: string;
 
     /**
-     * Storage is the definition of how storage will be used by the Alertmanager
+     * storage defines the definition of how storage will be used by the Alertmanager
      * instances.
      */
     storage?: {
       /**
-       * Deprecated: subPath usage will be removed in a future release.
+       * disableMountSubPath deprecated: subPath usage will be removed in a future release.
        */
       disableMountSubPath?: boolean;
       /**
-       * EmptyDirVolumeSource to be used by the StatefulSet.
+       * emptyDir to be used by the StatefulSet.
        * If specified, it takes precedence over `ephemeral` and `volumeClaimTemplate`.
        * More info: https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
        */
@@ -4577,7 +5440,7 @@ interface AlertmanagerSpec {
         sizeLimit?: number | string;
       };
       /**
-       * EphemeralVolumeSource to be used by the StatefulSet.
+       * ephemeral to be used by the StatefulSet.
        * This is a beta field in k8s 1.21 and GA in 1.15.
        * For lower versions, starting with k8s 1.19, it requires enabling the GenericEphemeralVolume feature gate.
        * More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/#generic-ephemeral-volumes
@@ -4766,15 +5629,13 @@ interface AlertmanagerSpec {
              * volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
              * If specified, the CSI driver will create or update the volume with the attributes defined
              * in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-             * it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-             * will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-             * If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-             * will be set by the persistentvolume controller if it exists.
+             * it can be changed after the claim is created. An empty string or nil value indicates that no
+             * VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+             * this field can be reset to its previous value (including nil) to cancel the modification.
              * If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
              * set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
              * exists.
              * More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-             * (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
              */
             volumeAttributesClassName?: string;
             /**
@@ -4790,7 +5651,7 @@ interface AlertmanagerSpec {
         };
       };
       /**
-       * Defines the PVC spec to be used by the Prometheus StatefulSets.
+       * volumeClaimTemplate defines the PVC spec to be used by the Prometheus StatefulSets.
        * The easiest way to use a volume that cannot be automatically provisioned
        * is to use a label selector alongside manually created PersistentVolumes.
        */
@@ -4811,39 +5672,39 @@ interface AlertmanagerSpec {
          */
         kind?: string;
         /**
-         * EmbeddedMetadata contains metadata relevant to an EmbeddedResource.
+         * metadata defines EmbeddedMetadata contains metadata relevant to an EmbeddedResource.
          */
         metadata?: {
           /**
-           * Annotations is an unstructured key value map stored with a resource that may be
+           * annotations defines an unstructured key value map stored with a resource that may be
            * set by external tools to store and retrieve arbitrary metadata. They are not
            * queryable and should be preserved when modifying objects.
-           * More info: http://kubernetes.io/docs/user-guide/annotations
+           * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
            */
           annotations?: {
             [k: string]: string;
           };
           /**
-           * Map of string keys and values that can be used to organize and categorize
+           * labels define the map of string keys and values that can be used to organize and categorize
            * (scope and select) objects. May match selectors of replication controllers
            * and services.
-           * More info: http://kubernetes.io/docs/user-guide/labels
+           * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
            */
           labels?: {
             [k: string]: string;
           };
           /**
-           * Name must be unique within a namespace. Is required when creating resources, although
+           * name must be unique within a namespace. Is required when creating resources, although
            * some resources may allow a client to request the generation of an appropriate name
            * automatically. Name is primarily intended for creation idempotence and configuration
            * definition.
            * Cannot be updated.
-           * More info: http://kubernetes.io/docs/user-guide/identifiers#names
+           * More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
            */
           name?: string;
         };
         /**
-         * Defines the desired characteristics of a volume requested by a pod author.
+         * spec defines the specification of the  characteristics of a volume requested by a pod author.
          * More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims
          */
         spec?: {
@@ -4993,15 +5854,13 @@ interface AlertmanagerSpec {
            * volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
            * If specified, the CSI driver will create or update the volume with the attributes defined
            * in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-           * it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-           * will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-           * If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-           * will be set by the persistentvolume controller if it exists.
+           * it can be changed after the claim is created. An empty string or nil value indicates that no
+           * VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+           * this field can be reset to its previous value (including nil) to cancel the modification.
            * If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
            * set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
            * exists.
            * More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-           * (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
            */
           volumeAttributesClassName?: string;
           /**
@@ -5015,7 +5874,7 @@ interface AlertmanagerSpec {
           volumeName?: string;
         };
         /**
-         * Deprecated: this field is never set.
+         * status is deprecated: this field is never set.
          */
         status?: {
           /**
@@ -5139,13 +5998,11 @@ interface AlertmanagerSpec {
           /**
            * currentVolumeAttributesClassName is the current name of the VolumeAttributesClass the PVC is using.
            * When unset, there is no VolumeAttributeClass applied to this PersistentVolumeClaim
-           * This is a beta field and requires enabling VolumeAttributesClass feature (off by default).
            */
           currentVolumeAttributesClassName?: string;
           /**
            * ModifyVolumeStatus represents the status object of ControllerModifyVolume operation.
            * When this is unset, there is no ModifyVolume operation being attempted.
-           * This is a beta field and requires enabling VolumeAttributesClass feature (off by default).
            */
           modifyVolumeStatus?: {
             /**
@@ -5175,14 +6032,23 @@ interface AlertmanagerSpec {
     };
 
     /**
-     * Tag of Alertmanager container image to be deployed. Defaults to the value of `version`.
+     * tag of Alertmanager container image to be deployed. Defaults to the value of `version`.
      * Version is ignored if Tag is set.
      * Deprecated: use 'image' instead. The image tag can be specified as part of the image URL.
      */
     tag?: string;
 
     /**
-     * If specified, the pod's tolerations.
+     * terminationGracePeriodSeconds defines the Optional duration in seconds the pod needs to terminate gracefully.
+     * Value must be non-negative integer. The value zero indicates stop immediately via
+     * the kill signal (no opportunity to shut down) which may lead to data corruption.
+     *
+     * Defaults to 120 seconds.
+     */
+    terminationGracePeriodSeconds?: number;
+
+    /**
+     * tolerations defines the pod's tolerations.
      */
     tolerations?: {
       /**
@@ -5217,7 +6083,7 @@ interface AlertmanagerSpec {
     }[];
 
     /**
-     * If specified, the pod's topology spread constraints.
+     * topologySpreadConstraints defines the Pod's topology spread constraints.
      */
     topologySpreadConstraints?: {
       /**
@@ -5318,7 +6184,6 @@ interface AlertmanagerSpec {
        * - Ignore: nodeAffinity/nodeSelector are ignored. All nodes are included in the calculations.
        *
        * If this value is nil, the behavior is equivalent to the Honor policy.
-       * This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
        */
       nodeAffinityPolicy?: string;
       /**
@@ -5329,7 +6194,6 @@ interface AlertmanagerSpec {
        * - Ignore: node taints are ignored. All nodes are included.
        *
        * If this value is nil, the behavior is equivalent to the Ignore policy.
-       * This is a beta-level feature default enabled by the NodeInclusionPolicyInPodTopologySpread feature flag.
        */
       nodeTaintsPolicy?: string;
       /**
@@ -5369,12 +6233,12 @@ interface AlertmanagerSpec {
     }[];
 
     /**
-     * Version the cluster should be on.
+     * version the cluster should be on.
      */
     version?: string;
 
     /**
-     * VolumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition.
+     * volumeMounts allows configuration of additional VolumeMounts on the output StatefulSet definition.
      * VolumeMounts specified will be appended to other VolumeMounts in the alertmanager container,
      * that are generated as a result of StorageSpec objects.
      */
@@ -5436,7 +6300,7 @@ interface AlertmanagerSpec {
     }[];
 
     /**
-     * Volumes allows configuration of additional volumes on the output StatefulSet definition.
+     * volumes allows configuration of additional volumes on the output StatefulSet definition.
      * Volumes specified will be appended to other volumes that are generated as a result of
      * StorageSpec objects.
      */
@@ -6013,15 +6877,13 @@ interface AlertmanagerSpec {
              * volumeAttributesClassName may be used to set the VolumeAttributesClass used by this claim.
              * If specified, the CSI driver will create or update the volume with the attributes defined
              * in the corresponding VolumeAttributesClass. This has a different purpose than storageClassName,
-             * it can be changed after the claim is created. An empty string value means that no VolumeAttributesClass
-             * will be applied to the claim but it's not allowed to reset this field to empty string once it is set.
-             * If unspecified and the PersistentVolumeClaim is unbound, the default VolumeAttributesClass
-             * will be set by the persistentvolume controller if it exists.
+             * it can be changed after the claim is created. An empty string or nil value indicates that no
+             * VolumeAttributesClass will be applied to the claim. If the claim enters an Infeasible error state,
+             * this field can be reset to its previous value (including nil) to cancel the modification.
              * If the resource referred to by volumeAttributesClass does not exist, this PersistentVolumeClaim will be
              * set to a Pending state, as reflected by the modifyVolumeStatus field, until such as a resource
              * exists.
              * More info: https://kubernetes.io/docs/concepts/storage/volume-attributes-classes/
-             * (Beta) Using this field requires the VolumeAttributesClass feature gate to be enabled (off by default).
              */
             volumeAttributesClassName?: string;
             /**
@@ -6186,12 +7048,10 @@ interface AlertmanagerSpec {
       /**
        * glusterfs represents a Glusterfs mount on the host that shares a pod's lifetime.
        * Deprecated: Glusterfs is deprecated and the in-tree glusterfs type is no longer supported.
-       * More info: https://examples.k8s.io/volumes/glusterfs/README.md
        */
       glusterfs?: {
         /**
          * endpoints is the endpoint name that details Glusterfs topology.
-         * More info: https://examples.k8s.io/volumes/glusterfs/README.md#create-a-pod
          */
         endpoints: string;
         /**
@@ -6240,7 +7100,7 @@ interface AlertmanagerSpec {
        * The types of objects that may be mounted by this volume are defined by the container runtime implementation on a host machine and at minimum must include all valid types supported by the container image field.
        * The OCI object gets mounted in a single directory (spec.containers[*].volumeMounts.mountPath) by merging the manifest layers in the same way as for container images.
        * The volume will be mounted read-only (ro) and non-executable files (noexec).
-       * Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath).
+       * Sub path mounts for containers are not supported (spec.containers[*].volumeMounts.subpath) before 1.33.
        * The field spec.securityContext.fsGroupChangePolicy has no effect on this volume type.
        */
       image?: {
@@ -6265,7 +7125,7 @@ interface AlertmanagerSpec {
       /**
        * iscsi represents an ISCSI Disk resource that is attached to a
        * kubelet's host machine and then exposed to the pod.
-       * More info: https://examples.k8s.io/volumes/iscsi/README.md
+       * More info: https://kubernetes.io/docs/concepts/storage/volumes/#iscsi
        */
       iscsi?: {
         /**
@@ -6613,6 +7473,107 @@ interface AlertmanagerSpec {
             }[];
           };
           /**
+           * Projects an auto-rotating credential bundle (private key and certificate
+           * chain) that the pod can use either as a TLS client or server.
+           *
+           * Kubelet generates a private key and uses it to send a
+           * PodCertificateRequest to the named signer.  Once the signer approves the
+           * request and issues a certificate chain, Kubelet writes the key and
+           * certificate chain to the pod filesystem.  The pod does not start until
+           * certificates have been issued for each podCertificate projected volume
+           * source in its spec.
+           *
+           * Kubelet will begin trying to rotate the certificate at the time indicated
+           * by the signer using the PodCertificateRequest.Status.BeginRefreshAt
+           * timestamp.
+           *
+           * Kubelet can write a single file, indicated by the credentialBundlePath
+           * field, or separate files, indicated by the keyPath and
+           * certificateChainPath fields.
+           *
+           * The credential bundle is a single file in PEM format.  The first PEM
+           * entry is the private key (in PKCS#8 format), and the remaining PEM
+           * entries are the certificate chain issued by the signer (typically,
+           * signers will return their certificate chain in leaf-to-root order).
+           *
+           * Prefer using the credential bundle format, since your application code
+           * can read it atomically.  If you use keyPath and certificateChainPath,
+           * your application must make two separate file reads. If these coincide
+           * with a certificate rotation, it is possible that the private key and leaf
+           * certificate you read may not correspond to each other.  Your application
+           * will need to check for this condition, and re-read until they are
+           * consistent.
+           *
+           * The named signer controls chooses the format of the certificate it
+           * issues; consult the signer implementation's documentation to learn how to
+           * use the certificates it issues.
+           */
+          podCertificate?: {
+            /**
+             * Write the certificate chain at this path in the projected volume.
+             *
+             * Most applications should use credentialBundlePath.  When using keyPath
+             * and certificateChainPath, your application needs to check that the key
+             * and leaf certificate are consistent, because it is possible to read the
+             * files mid-rotation.
+             */
+            certificateChainPath?: string;
+            /**
+             * Write the credential bundle at this path in the projected volume.
+             *
+             * The credential bundle is a single file that contains multiple PEM blocks.
+             * The first PEM block is a PRIVATE KEY block, containing a PKCS#8 private
+             * key.
+             *
+             * The remaining blocks are CERTIFICATE blocks, containing the issued
+             * certificate chain from the signer (leaf and any intermediates).
+             *
+             * Using credentialBundlePath lets your Pod's application code make a single
+             * atomic read that retrieves a consistent key and certificate chain.  If you
+             * project them to separate files, your application code will need to
+             * additionally check that the leaf certificate was issued to the key.
+             */
+            credentialBundlePath?: string;
+            /**
+             * Write the key at this path in the projected volume.
+             *
+             * Most applications should use credentialBundlePath.  When using keyPath
+             * and certificateChainPath, your application needs to check that the key
+             * and leaf certificate are consistent, because it is possible to read the
+             * files mid-rotation.
+             */
+            keyPath?: string;
+            /**
+             * The type of keypair Kubelet will generate for the pod.
+             *
+             * Valid values are "RSA3072", "RSA4096", "ECDSAP256", "ECDSAP384",
+             * "ECDSAP521", and "ED25519".
+             */
+            keyType: string;
+            /**
+             * maxExpirationSeconds is the maximum lifetime permitted for the
+             * certificate.
+             *
+             * Kubelet copies this value verbatim into the PodCertificateRequests it
+             * generates for this projection.
+             *
+             * If omitted, kube-apiserver will set it to 86400(24 hours). kube-apiserver
+             * will reject values shorter than 3600 (1 hour).  The maximum allowable
+             * value is 7862400 (91 days).
+             *
+             * The signer implementation is then free to issue a certificate with any
+             * lifetime *shorter* than MaxExpirationSeconds, but no shorter than 3600
+             * seconds (1 hour).  This constraint is enforced by kube-apiserver.
+             * `kubernetes.io` signers will never issue certificates with a lifetime
+             * longer than 24 hours.
+             */
+            maxExpirationSeconds?: number;
+            /**
+             * Kubelet's generated CSRs will be addressed to this signer.
+             */
+            signerName: string;
+          };
+          /**
            * secret information about the secret data to project
            */
           secret?: {
@@ -6727,7 +7688,6 @@ interface AlertmanagerSpec {
       /**
        * rbd represents a Rados Block Device mount on the host that shares a pod's lifetime.
        * Deprecated: RBD is deprecated and the in-tree rbd type is no longer supported.
-       * More info: https://examples.k8s.io/volumes/rbd/README.md
        */
       rbd?: {
         /**
@@ -6979,29 +7939,29 @@ interface AlertmanagerSpec {
     }[];
 
     /**
-     * Defines the web command line flags when starting Alertmanager.
+     * web defines the web command line flags when starting Alertmanager.
      */
     web?: {
       /**
-       * Maximum number of GET requests processed concurrently. This corresponds to the
+       * getConcurrency defines the maximum number of GET requests processed concurrently. This corresponds to the
        * Alertmanager's `--web.get-concurrency` flag.
        */
       getConcurrency?: number;
       /**
-       * Defines HTTP parameters for web server.
+       * httpConfig defines HTTP parameters for web server.
        */
       httpConfig?: {
         /**
-         * List of headers that can be added to HTTP responses.
+         * headers defines a list of headers that can be added to HTTP responses.
          */
         headers?: {
           /**
-           * Set the Content-Security-Policy header to HTTP responses.
+           * contentSecurityPolicy defines the Content-Security-Policy header to HTTP responses.
            * Unset if blank.
            */
           contentSecurityPolicy?: string;
           /**
-           * Set the Strict-Transport-Security header to HTTP responses.
+           * strictTransportSecurity defines the Strict-Transport-Security header to HTTP responses.
            * Unset if blank.
            * Please make sure that you use this with care as this header might force
            * browsers to load Prometheus and the other applications hosted on the same
@@ -7010,42 +7970,42 @@ interface AlertmanagerSpec {
            */
           strictTransportSecurity?: string;
           /**
-           * Set the X-Content-Type-Options header to HTTP responses.
+           * xContentTypeOptions defines the X-Content-Type-Options header to HTTP responses.
            * Unset if blank. Accepted value is nosniff.
            * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
            */
           xContentTypeOptions?: "" | "NoSniff";
           /**
-           * Set the X-Frame-Options header to HTTP responses.
+           * xFrameOptions defines the X-Frame-Options header to HTTP responses.
            * Unset if blank. Accepted values are deny and sameorigin.
            * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
            */
           xFrameOptions?: "" | "Deny" | "SameOrigin";
           /**
-           * Set the X-XSS-Protection header to all responses.
+           * xXSSProtection defines the X-XSS-Protection header to all responses.
            * Unset if blank.
            * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
            */
           xXSSProtection?: string;
         };
         /**
-         * Enable HTTP/2 support. Note that HTTP/2 is only supported with TLS.
+         * http2 enable HTTP/2 support. Note that HTTP/2 is only supported with TLS.
          * When TLSConfig is not configured, HTTP/2 will be disabled.
          * Whenever the value of the field changes, a rolling update will be triggered.
          */
         http2?: boolean;
       };
       /**
-       * Timeout for HTTP requests. This corresponds to the Alertmanager's
+       * timeout for HTTP requests. This corresponds to the Alertmanager's
        * `--web.timeout` flag.
        */
       timeout?: number;
       /**
-       * Defines the TLS parameters for HTTPS.
+       * tlsConfig defines the TLS parameters for HTTPS.
        */
       tlsConfig?: {
         /**
-         * Secret or ConfigMap containing the TLS certificate for the web server.
+         * cert defines the Secret or ConfigMap containing the TLS certificate for the web server.
          *
          * Either `keySecret` or `keyFile` must be defined.
          *
@@ -7053,7 +8013,7 @@ interface AlertmanagerSpec {
          */
         cert?: {
           /**
-           * ConfigMap containing data to use for the targets.
+           * configMap defines the ConfigMap containing data to use for the targets.
            */
           configMap?: {
             /**
@@ -7074,7 +8034,7 @@ interface AlertmanagerSpec {
             optional?: boolean;
           };
           /**
-           * Secret containing data to use for the targets.
+           * secret defines the Secret containing data to use for the targets.
            */
           secret?: {
             /**
@@ -7096,7 +8056,7 @@ interface AlertmanagerSpec {
           };
         };
         /**
-         * Path to the TLS certificate file in the container for the web server.
+         * certFile defines the path to the TLS certificate file in the container for the web server.
          *
          * Either `keySecret` or `keyFile` must be defined.
          *
@@ -7104,7 +8064,7 @@ interface AlertmanagerSpec {
          */
         certFile?: string;
         /**
-         * List of supported cipher suites for TLS versions up to TLS 1.2.
+         * cipherSuites defines the list of supported cipher suites for TLS versions up to TLS 1.2.
          *
          * If not defined, the Go default cipher suites are used.
          * Available cipher suites are documented in the Go documentation:
@@ -7112,14 +8072,14 @@ interface AlertmanagerSpec {
          */
         cipherSuites?: string[];
         /**
-         * Secret or ConfigMap containing the CA certificate for client certificate
+         * client_ca defines the Secret or ConfigMap containing the CA certificate for client certificate
          * authentication to the server.
          *
          * It is mutually exclusive with `clientCAFile`.
          */
         client_ca?: {
           /**
-           * ConfigMap containing data to use for the targets.
+           * configMap defines the ConfigMap containing data to use for the targets.
            */
           configMap?: {
             /**
@@ -7140,7 +8100,7 @@ interface AlertmanagerSpec {
             optional?: boolean;
           };
           /**
-           * Secret containing data to use for the targets.
+           * secret defines the Secret containing data to use for the targets.
            */
           secret?: {
             /**
@@ -7162,21 +8122,21 @@ interface AlertmanagerSpec {
           };
         };
         /**
-         * The server policy for client TLS authentication.
+         * clientAuthType defines the server policy for client TLS authentication.
          *
          * For more detail on clientAuth options:
          * https://golang.org/pkg/crypto/tls/#ClientAuthType
          */
         clientAuthType?: string;
         /**
-         * Path to the CA certificate file for client certificate authentication to
+         * clientCAFile defines the path to the CA certificate file for client certificate authentication to
          * the server.
          *
          * It is mutually exclusive with `client_ca`.
          */
         clientCAFile?: string;
         /**
-         * Elliptic curves that will be used in an ECDHE handshake, in preference
+         * curvePreferences defines elliptic curves that will be used in an ECDHE handshake, in preference
          * order.
          *
          * Available curves are documented in the Go documentation:
@@ -7184,7 +8144,7 @@ interface AlertmanagerSpec {
          */
         curvePreferences?: string[];
         /**
-         * Path to the TLS private key file in the container for the web server.
+         * keyFile defines the path to the TLS private key file in the container for the web server.
          *
          * If defined, either `cert` or `certFile` must be defined.
          *
@@ -7192,7 +8152,7 @@ interface AlertmanagerSpec {
          */
         keyFile?: string;
         /**
-         * Secret containing the TLS private key for the web server.
+         * keySecret defines the secret containing the TLS private key for the web server.
          *
          * Either `cert` or `certFile` must be defined.
          *
@@ -7217,15 +8177,15 @@ interface AlertmanagerSpec {
           optional?: boolean;
         };
         /**
-         * Maximum TLS version that is acceptable.
+         * maxVersion defines the Maximum TLS version that is acceptable.
          */
         maxVersion?: string;
         /**
-         * Minimum TLS version that is acceptable.
+         * minVersion defines the minimum TLS version that is acceptable.
          */
         minVersion?: string;
         /**
-         * Controls whether the server selects the client's most preferred cipher
+         * preferServerCipherSuites defines whether the server selects the client's most preferred cipher
          * suite, or the server's most preferred cipher suite.
          *
          * If true then the server's preference, as expressed in
@@ -7252,23 +8212,23 @@ interface AlertmanagerSpec {
 export interface AlertmanagerArgs {
   metadata: k8s.meta.v1.NamespacedObjectMeta;
   /**
-   * Specification of the desired behavior of the Alertmanager cluster. More info:
+   * spec defines the specification of the desired behavior of the Alertmanager cluster. More info:
    * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
    */
   spec: AlertmanagerSpec;
   /**
-   * Most recent observed status of the Alertmanager cluster. Read-only.
+   * status defines the most recent observed status of the Alertmanager cluster. Read-only.
    * More info:
    * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
    */
   status?: {
     /**
-     * Total number of available pods (ready for at least minReadySeconds)
+     * availableReplicas defines the total number of available pods (ready for at least minReadySeconds)
      * targeted by this Alertmanager cluster.
      */
-    availableReplicas: number;
+    availableReplicas?: number;
     /**
-     * The current state of the Alertmanager object.
+     * conditions defines the current state of the Alertmanager object.
      */
     conditions?: {
       /**
@@ -7276,11 +8236,11 @@ export interface AlertmanagerArgs {
        */
       lastTransitionTime: string;
       /**
-       * Human-readable message indicating details for the condition's last transition.
+       * message defines human-readable message indicating details for the condition's last transition.
        */
       message?: string;
       /**
-       * ObservedGeneration represents the .metadata.generation that the
+       * observedGeneration defines the .metadata.generation that the
        * condition was set based upon. For instance, if `.metadata.generation` is
        * currently 12, but the `.status.conditions[].observedGeneration` is 9, the
        * condition is out of date with respect to the current state of the
@@ -7288,47 +8248,47 @@ export interface AlertmanagerArgs {
        */
       observedGeneration?: number;
       /**
-       * Reason for the condition's last transition.
+       * reason for the condition's last transition.
        */
       reason?: string;
       /**
-       * Status of the condition.
+       * status of the condition.
        */
       status: string;
       /**
-       * Type of the condition being reported.
+       * type of the condition being reported.
        */
       type: string;
     }[];
     /**
-     * Represents whether any actions on the underlying managed objects are
+     * paused defines whether any actions on the underlying managed objects are
      * being performed. Only delete actions will be performed.
      */
-    paused: boolean;
+    paused?: boolean;
     /**
-     * Total number of non-terminated pods targeted by this Alertmanager
+     * replicas defines the total number of non-terminated pods targeted by this Alertmanager
      * object (their labels match the selector).
      */
-    replicas: number;
+    replicas?: number;
     /**
-     * The selector used to match the pods targeted by this Alertmanager object.
+     * selector used to match the pods targeted by this Alertmanager object.
      */
     selector?: string;
     /**
-     * Total number of unavailable pods targeted by this Alertmanager object.
+     * unavailableReplicas defines the total number of unavailable pods targeted by this Alertmanager object.
      */
-    unavailableReplicas: number;
+    unavailableReplicas?: number;
     /**
-     * Total number of non-terminated pods targeted by this Alertmanager
+     * updatedReplicas defines the total number of non-terminated pods targeted by this Alertmanager
      * object that have the desired version spec.
      */
-    updatedReplicas: number;
+    updatedReplicas?: number;
   };
 }
 
 export class Alertmanager extends NamespacedAPIResource {
     spec: AlertmanagerSpec;
-    status?: { availableReplicas: number; conditions?: { lastTransitionTime: string; message?: string; observedGeneration?: number; reason?: string; status: string; type: string; }[]; paused: boolean; replicas: number; selector?: string; unavailableReplicas: number; updatedReplicas: number; };
+    status?: { availableReplicas?: number; conditions?: { lastTransitionTime: string; message?: string; observedGeneration?: number; reason?: string; status: string; type: string; }[]; paused?: boolean; replicas?: number; selector?: string; unavailableReplicas?: number; updatedReplicas?: number; };
 
     constructor(args: AlertmanagerArgs) {
         super('monitoring.coreos.com/v1', 'Alertmanager', args.metadata);

@@ -1,4 +1,4 @@
-import { ResourceCollector } from './resourceCollector.js';
+import { ResourceCollector } from './ResourceCollector.js';
 
 export abstract class Frame {
 

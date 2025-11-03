@@ -1,4 +1,4 @@
-import { ObjectMeta, NamespacedObjectMeta } from "../meta/v1/ObjectMeta.js";
+import { ObjectMeta, NamespacedObjectMeta } from "../generated/meta/v1/ObjectMeta.js";
 
 /**
  * Base class for all API resources.

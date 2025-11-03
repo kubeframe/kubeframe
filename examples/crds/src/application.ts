@@ -1,6 +1,5 @@
-import { k8s } from '@kubeframe/k8s';
+import { k8s, Frame, ResourceCollector, YAMLFrame } from '@kubeframe/kubeframe-version';
 import { crds, registerCRDs } from './crds/index.js';
-import { Frame, ResourceCollector, YAMLFrame } from '@kubeframe/core';
 
 export class ApplicationFrame extends Frame {
 
@@ -35,7 +34,7 @@ export class ApplicationFrame extends Frame {
         });
 
         resourceCollector.addResource({
-            frameName: 'ApplicationFrame',
+            frame: this,
         }, configMap);
 
         const sealedSecret = new crds.bitnami.com.v1alpha1.SealedSecret({
@@ -52,7 +51,7 @@ export class ApplicationFrame extends Frame {
         });
 
         resourceCollector.addResource({
-            frameName: 'ApplicationFrame',
+            frame: this,
         }, sealedSecret);
     }
 

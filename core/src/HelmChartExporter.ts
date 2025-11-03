@@ -1,10 +1,10 @@
 import * as path from "path";
-import { APIResource, NamespacedAPIResource } from "@kubeframe/k8s";
-import { CollectedResource, ResourceCollector, ResourceFilter } from "./resourceCollector.js";
+import { APIResource, NamespacedAPIResource } from "./base/APIResource.js";
+import { CollectedResource, ResourceCollector, ResourceFilter } from "./ResourceCollector.js";
 import { mkdirSync, statSync, writeFileSync } from "fs";
 import * as YAML from "yaml";
-import { resourceToYaml } from "./yaml.js";
-import { YAMLExporter } from "./yamlExporter.js";
+import { resourceToYaml } from "./YAML.js";
+import { YAMLExporter } from "./YAMLExporter.js";
 
 export type TemplateNameBulder = (resource: CollectedResource) => string;
 

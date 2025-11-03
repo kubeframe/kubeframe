@@ -1,5 +1,5 @@
 
-import { ResourceCollector, YAMLExporter } from '@kubeframe/core';
+import { ResourceCollector, YAMLExporter } from '@kubeframe/kubeframe-version';
 import { ApplicationFrame } from "./application.js";
 
 async function run() {

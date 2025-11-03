@@ -1,4 +1,4 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/k8s";
+import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
 
 interface SealedSecretSpec {
 

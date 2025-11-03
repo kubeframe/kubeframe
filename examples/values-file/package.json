@@ -10,22 +10,18 @@
         "start": "node dist/main.js",
         "generate-schema": "npx ts-json-schema-generator --path 'src/**/*.ts' --type 'Configuration' > schema.json"
     },
-    "overrides": {
-        "@kubeframe/core": "~0.4.2",
-        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@~0.5.2"
-    },
     "dependencies": {
-        "@kubeframe/core": "~0.4.2",
-        "@kubeframe/k8s": "npm:@kubeframe/k8s-1.32@~0.5.2",
+        "@kubeframe/kubeframe-version": "file:../../core",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.1",
         "class-validator-jsonschema": "^5.0.1",
         "reflect-metadata": "^0.2.2"
     },
     "devDependencies": {
-        "@kubeframe/cli": "@kubeframe/cli:~0.5.2",
+        "@kubeframe/cli": "@kubeframe/cli:file:../../cli",
         "@types/node": "^22.13.5",
-        "typescript": "^5.7.3"
+        "typescript": "^5.7.3",
+        "ts-json-schema-generator": "2.4.0"
     },
     "keywords": []
 }
