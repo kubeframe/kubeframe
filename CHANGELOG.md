@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/kubeframe/kubeframe/compare/v1.0.0...v1.0.1) (2025-11-03)
+
+
+### Bug Fixes
+
+* Checkout was done too late ([3a5f3b7](https://github.com/kubeframe/kubeframe/commit/3a5f3b78ce7ea380b1a7a9acc5e7b739bc329d7d))
+
 ## 1.0.0 (2025-11-03)
 
 
