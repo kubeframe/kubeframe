@@ -39,7 +39,7 @@
     "json-schema-to-typescript": "^15.0.4",
     "latest-version": "^9.0.0",
     "lodash": "^4.17.21",
-    "ts-morph": "^25.0.0",
+    "ts-morph": "^27.0.2",
     "typescript": "^5.7.3",
     "yaml": "^2.7.0"
   },
