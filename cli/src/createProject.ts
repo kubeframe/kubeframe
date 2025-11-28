@@ -1,8 +1,8 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import * as latestVersion from 'latest-version';
 
-export async function createProject(name: string, version: string) {
-    console.info(`Creating project '${name}' with Kubernetes version ${version}`);
+export async function createProject(name: string, kubernetesVersion: string) {
+    console.info(`Creating project '${name}' with Kubernetes version ${kubernetesVersion}`);
 
     const projectDir = `./${name}`;
 
@@ -17,7 +17,7 @@ export async function createProject(name: string, version: string) {
     // Create src directory
     mkdirSync(`${projectDir}/src`);
 
-    const latestKubeframeVersion = await latestVersion.default(`@kubeframe/kubeframe-${version}`);
+    const latestKubeframeVersion = await latestVersion.default(`@kubeframe/kubeframe-${kubernetesVersion}`);
     const latestTypescriptVersion = await latestVersion.default(`typescript`);
     const latestNodeTypes = await latestVersion.default('@types/node');
     const latestCliVersion = await latestVersion.default('@kubeframe/cli');
@@ -31,11 +31,11 @@ export async function createProject(name: string, version: string) {
         type: 'module',
         scripts: {
             build: 'rm -rf ./dist && tsc',
-            generate: 'rm -rf ./src/crds && cli generate-crd from-config-file ./crds-config.yaml --output ./src/crds',
+            'generate-crds': 'rm -rf ./src/crds && cli generate-crd from-config-file ./crds-config.yaml --output ./src/crds',
             start: 'node dist/main.js',
         },
         dependencies: {
-            [`@kubeframe/kubeframe-${version}`]: `~${latestKubeframeVersion}`,
+            [`@kubeframe/kubeframe-${kubernetesVersion}`]: `~${latestKubeframeVersion}`,
         },
         devDependencies: {
             "typescript": `^${latestTypescriptVersion}`,
@@ -74,8 +74,9 @@ export async function createProject(name: string, version: string) {
     copyFileSync(`${import.meta.dirname}/project_base/application.ts`, `${projectDir}/src/application.ts`);
 
     // Replace kubeframe-version with the correct version in files
-    replaceStringInFile(`${projectDir}/src/main.ts`, '@kubeframe/kubeframe-version', `@kubeframe/kubeframe-${version}`);
-    replaceStringInFile(`${projectDir}/src/application.ts`, '@kubeframe/kubeframe-version', `@kubeframe/kubeframe-${version}`);
+    replaceStringInFile(`${projectDir}/src/main.ts`, '@kubeframe/kubeframe-version', `@kubeframe/kubeframe-${kubernetesVersion}`);
+    replaceStringInFile(`${projectDir}/src/application.ts`, '@kubeframe/kubeframe-version', `@kubeframe/kubeframe-${kubernetesVersion}`);
+    replaceStringInFile(`${projectDir}/src/component.ts`, '@kubeframe/kubeframe-version', `@kubeframe/kubeframe-${kubernetesVersion}`);
 
     console.info(`Project '${name}' created`);
     console.info(`To build the project, run 'cd ${name} && npm install && npm run build'`);
