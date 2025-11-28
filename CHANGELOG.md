@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/kubeframe/kubeframe/compare/v1.0.3...v2.0.0) (2025-11-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* Major refactoring
+
+### Features
+
+* Major refactoring ([1220351](https://github.com/kubeframe/kubeframe/commit/122035144e807e0222db3f0d85dd31e1f21ee668))
+
+
+### Bug Fixes
+
+* Project creation ([4a3c146](https://github.com/kubeframe/kubeframe/commit/4a3c146e38e59b3916c03023b4415d3d9a20d36b))
+
 ## [1.0.3](https://github.com/kubeframe/kubeframe/compare/v1.0.2...v1.0.3) (2025-11-03)
 
 
