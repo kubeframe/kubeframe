@@ -1,8 +1,8 @@
 import { execSync } from "child_process";
-import { Frame } from "./Frame.js";
-import { ResourceCollector } from "./ResourceCollector.js";
 import { APIResourceFactory } from "./base/APIResourceFactory.js";
 import * as YAML from 'yaml';
+import { Component } from "./Component.js";
+import { APIObject } from "./base/APIResource.js";
 
 export interface HelmOptions {
     releaseName: string;
@@ -13,15 +13,13 @@ export interface HelmOptions {
 /**
  * Frame to import Helm charts
  */
-export class HelmFrame extends Frame {
+export class HelmComponent extends Component {
 
     constructor(name: string, private options: HelmOptions) {
         super(name);
     }
 
-    async doPreBuild() { }
-
-    async doBuild(resourceCollector: ResourceCollector) {
+    async build() {
 
         // Run helm template
         const buffer = execSync(`helm template ${this.options.releaseName} ${this.options.chart} ${this.options.options.join(' ')}`);
@@ -32,11 +30,7 @@ export class HelmFrame extends Frame {
         for (const doc of docs) {
             const json = doc.toJSON();
             const resource = APIResourceFactory.createFromPlainJSON(json);
-            resourceCollector.addResource({
-                frame: this,
-            }, resource);
+            this.addResource(resource as APIObject);
         }
     }
-
-    async doPostBuild() { }
 }

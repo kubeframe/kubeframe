@@ -1,16 +1,15 @@
 
-import { ResourceCollector, YAMLExporter } from '@kubeframe/kubeframe-version';
-import { ApplicationFrame } from "./application.js";
+import { YAMLExporter } from '@kubeframe/kubeframe-version';
+import { MyApplication } from "./application.js";
 
 async function run() {
     
-    const applicationFrame = new ApplicationFrame();
+    const application = new MyApplication();
     
-    const resourceCollector = new ResourceCollector();
-    await applicationFrame.build(resourceCollector);
+    await application.buildAll();
     
-    const yamlExporter = new YAMLExporter(resourceCollector);
-    const yaml = yamlExporter.export();
+    const yamlExporter = new YAMLExporter();
+    const yaml = yamlExporter.export(application);
 
     console.log(yaml);
 }

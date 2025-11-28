@@ -11,15 +11,21 @@ import {
 import * as path from 'path';
 import _ from 'lodash';
 import { ClassDeclaration, Project, SourceFile, ts } from "ts-morph";
-import { chunkArray, formatComment, upperCaseFirstLetter } from './util.js';
+import { chunkArray, upperCaseFirstLetter } from './util.js';
 import {
-    addClassConstructor,
+    addPropertiesClassConstructor,
     addToIndexImportTree,
+    addToJSONMethod,
+    addTopLevelClassConstructor,
+    addTypeCheckIsMethod,
+    cleanTypeNameFromImport,
     comparePropertyName,
+    createGetterAndSetterForProperty,
+    createInterfaceWithProperties,
+    removePropertiesFromClass,
     removeUnnecessaryQuotesFromPropertyName,
 } from './typescriptHelpers.js';
 import { promises as fsPromises } from 'fs';
-import dedent from 'dedent';
 
 export interface GroupVersionKind {
     group: string;
@@ -47,8 +53,10 @@ interface KubernetesOpenApiSpec {
     },
     paths: {
         [key: string]: {
-            post?: {
+            // We only need GET operations for now
+            get?: {
                 'x-kubernetes-group-version-kind': GroupVersionKind;
+                'x-kubernetes-action'?: string;
             }
         }
     }
@@ -62,7 +70,7 @@ export interface SchemaModelRemap {
     }
 }
 
-export interface ApiResourceProperties {
+export interface ResourceProperties {
     isNamespaced: boolean;
 }
 
@@ -74,8 +82,9 @@ export interface FactoryGenerationProperties {
 
 export interface GenerationState {
     nameComponentsMapping: Map<string, string[]>;
+    apiTypes: Set<string>;
     nameToGroupVersionKind: Map<string, GroupVersionKind>;
-    apiResourceProperties: Map<string, ApiResourceProperties>;
+    resourceProperties: Map<string, ResourceProperties>;
     factoryGenerationProperties: FactoryGenerationProperties[];
 }
 
@@ -153,6 +162,7 @@ function preprocessKubernetesOpenApiSpecs(directory: string, state: GenerationSt
 
             reverseNameMapping.set(name, newName);
             state.nameComponentsMapping.set(newName, [group, version, kind]);
+            state.apiTypes.add(kind);
 
             // Only top level API resources have this property
             if (body["x-kubernetes-group-version-kind"]) {
@@ -167,14 +177,14 @@ function preprocessKubernetesOpenApiSpecs(directory: string, state: GenerationSt
         }
 
         for (const [path, body] of Object.entries(schema.paths)) {
-            if (body.post) {
+            if (body.get) {
                 const isNamespaced = path.includes('{namespace}');
                 const groupVersionKind = {
-                    ...body.post['x-kubernetes-group-version-kind']
+                    ...body.get['x-kubernetes-group-version-kind']
                 };
 
                 if (groupVersionKind) {
-                    state.apiResourceProperties.set(groupVersionKindToString(groupVersionKind), {
+                    state.resourceProperties.set(groupVersionKindToString(groupVersionKind), {
                         isNamespaced: isNamespaced,
                     });
                 }
@@ -368,6 +378,7 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
             const newName = state.nameComponentsMapping.get(name)?.[2];
             if (newName) {
                 namedImport.setName(newName);
+                imp.addNamedImport(`${newName}Properties`);
             }
         });
     });
@@ -392,9 +403,13 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
 
         // Change properties to correct types and remove quotes if possible
         modelClass.getProperties().forEach(property => {
+
+            property.rename(removeUnnecessaryQuotesFromPropertyName(property.getName()));
+            
             property.transform(traversal => {
                 const node = traversal.visitChildren();
                 if (ts.isIdentifier(node)) {
+                    
                     const typeName = node.getText();
                     const nameComponents = state.nameComponentsMapping.get(typeName);
                     if (!nameComponents) {
@@ -423,112 +438,101 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
 
         // If its api resource add constructor
         if (groupVersionKind) {
-            const apiResourceProperties = state.apiResourceProperties.get(groupVersionKindToString(groupVersionKind));
-            if (apiResourceProperties) {
 
-                // Add APIResource or NamespacedAPIResource import
-                sourceFile.addImportDeclaration({
-                    moduleSpecifier: '../../../base/APIResource.js',
-                    namedImports: [apiResourceProperties.isNamespaced ? 'NamespacedAPIResource' : 'APIResource'],
-                });
+            const resourceProperties = state.resourceProperties.get(groupVersionKindToString(groupVersionKind));
+            const metadataProperty = modelClass.getProperty((p => comparePropertyName(p.getName(), 'metadata')));
 
-                if (apiResourceProperties.isNamespaced) {
-                    modelClass.setExtends('NamespacedAPIResource');
-                    // If its a NamespacedAPIResource, rename ObjectMeta to NamespacedObjectMeta
-                    sourceFile.getImportDeclarations().forEach(imp => {
-                        imp.getNamedImports().forEach(namedImport => {
-                            if (namedImport.getName() === 'ObjectMeta') {
-                                namedImport.setName('NamespacedObjectMeta');
-                            }
-                        });
-                    });
+            let isNamespaced = false;
+            let hasHasMetadata = false;
+            let isListMetadataType = false;
+
+            if (metadataProperty) {
+                hasHasMetadata = true;
+                if (metadataProperty.getType().getText() === 'ListMeta') {
+                    isListMetadataType = true;
+                }
+            }
+
+            if (resourceProperties) {
+                isNamespaced = resourceProperties.isNamespaced;
+            }
+
+            if (hasHasMetadata) {
+                let metadataBaseType = undefined;
+                if (isListMetadataType) {
+                    metadataBaseType = 'APIObjectList';
+                } else if (isNamespaced) {
+                    metadataBaseType = 'NamespacedAPIObject';
                 } else {
-                    modelClass.setExtends('APIResource');
+                    metadataBaseType = 'APIObject';
                 }
 
-                const argsInterface = sourceFile.insertInterface(modelClass.getChildIndex(), {
-                    name: `${groupVersionKind.kind}Args`,
-                    properties: modelClass.getProperties().map(p => {
-                        // Do not add apiVersion and kind to the args as they become readonly properties
-                        if (comparePropertyName(p.getName(), 'apiVersion') || comparePropertyName(p.getName(), 'kind')) {
-                            console.log(`Removing property: ${p.getName()}`);
-                            return;
-                        }
-
-                        const typeNode = p.getTypeNode();
-                        if (!typeNode) {
-                            console.error(`Failed to find type node for property: ${p.getName()}`);
-                            process.exit(1);
-                        }
-
-                        let typeName = typeNode.getText();
-                        const isMetadataProperty = comparePropertyName(p.getName(), 'metadata');
-                        if (isMetadataProperty) {
-                            if (apiResourceProperties.isNamespaced) {
-                                typeName = 'NamespacedObjectMeta';
-                            } else {
-                                typeName = 'ObjectMeta';
-                            }
-                        }
-
-                        return {
-                            name: removeUnnecessaryQuotesFromPropertyName(p.getName()),
-                            type: typeName,
-                            // Metadata is required
-                            hasQuestionToken: comparePropertyName(p.getName(), 'metadata') ? false : p.hasQuestionToken(),
-                            isReadonly: p.isReadonly(),
-                            docs: p.getJsDocs().map(d => formatComment(d.getInnerText())),
-                        };
-                    }).filter(p => p !== undefined),
-                })
-                .setIsExported(true);
-
-                // Metadata is inherited from APIResource or NamespacedAPIResource
-                modelClass.getProperty((p => comparePropertyName(p.getName(), 'metadata')))?.remove();
-                modelClass.getProperty((p => comparePropertyName(p.getName(), 'apiVersion')))?.remove();
-                modelClass.getProperty((p => comparePropertyName(p.getName(), 'kind')))?.remove();
-
-                addClassConstructor(modelClass, groupVersionKind, argsInterface);
+                sourceFile.addImportDeclaration({
+                    moduleSpecifier: '../../../base/APIResource.js',
+                    namedImports: [ metadataBaseType ],
+                });
+                modelClass.setExtends(metadataBaseType);
 
                 state.factoryGenerationProperties.push({
                     groupVersionKind: groupVersionKind,
                     className: groupVersionKind.kind,
                     path: path.join(group, version, groupVersionKind.kind),
                 });
-            } else {
-                console.info(`No api resource properties found for: ${groupVersionKindToString(groupVersionKind)}, skipping because it's not creatable API resource`);
             }
+
+            // Fix property types by clearing any unwanted imports
+            modelClass.getProperties().forEach(property => {
+                const typeName = property.getType().getText();
+                property.setType(cleanTypeNameFromImport(typeName));
+            });
+
+            // Create interface from all properties except apiVersion and kind
+            const propertiesInterface = createInterfaceWithProperties(
+                sourceFile,
+                `${groupVersionKind.kind}Properties`,
+                modelClass.getChildIndex(),
+                modelClass.getProperties()
+                    .filter(p => !comparePropertyName(p.getName(), 'apiVersion') && !comparePropertyName(p.getName(), 'kind')),
+                state.apiTypes
+            );
+
+            // Change metadata property to be required
+            propertiesInterface.getProperty((p => comparePropertyName(p.getName(), 'metadata')))?.setHasQuestionToken(false);
+
+            // Metadata is inherited from APIObject, NamespacedAPIObject or APIObjectList
+            removePropertiesFromClass(modelClass, ['apiVersion', 'kind', 'metadata']);
+
+            addTypeCheckIsMethod(modelClass);
+            addToJSONMethod(modelClass, propertiesInterface);
+            createGetterAndSetterForProperty(modelClass, propertiesInterface, state.apiTypes);
+
+            if (hasHasMetadata) {
+                addTopLevelClassConstructor(modelClass, groupVersionKind, propertiesInterface);
+            } else {
+                addPropertiesClassConstructor(modelClass, propertiesInterface);
+            }
+
         } else {
 
-            const index = modelClass.getChildIndex();
-            const newInterface = sourceFile
-                .insertInterface(index, modelClass.extractInterface(nameComponents[2]))
-                .setIsExported(true);
+            // Fix property types by clearing any unwanted imports
+            // This can happen when renaming some types
+            modelClass.getProperties().forEach(property => {
+                const typeName = property.getType().getText();
+                property.setType(cleanTypeNameFromImport(typeName));
+            });
 
-            // ObjectMeta needs special handling
-            if (nameComponents[2] === 'ObjectMeta') {
-                // Create a new interface for NamespacedObjectMeta
-                sourceFile.insertInterface(newInterface.getChildIndex() + 1, {
-                    name: 'NamespacedObjectMeta',
-                    properties: newInterface.getProperties()
-                        .filter(p => comparePropertyName(p.getName(), 'namespace'))
-                        .map(p => {
-                            return {
-                                name: p.getName(),
-                                type: p.getType().getText(),
-                                hasQuestionToken: false,
-                                docs: p.getJsDocs().map(d => formatComment(d.getInnerText())),
-                            };
-                        }),
-                    docs: newInterface.getJsDocs().map(d => formatComment(d.getInnerText())),
-                })
-                .setIsExported(true)
-                .insertExtends(0, 'ObjectMeta');
+            const propertiesInterface = createInterfaceWithProperties(
+                sourceFile,
+                `${modelClass.getName()}Properties`,
+                modelClass.getChildIndex(),
+                modelClass.getProperties(),
+                state.apiTypes
+            );
 
-                newInterface.getProperty(p => comparePropertyName(p.getName(), 'namespace'))?.remove();
-            }
-
-            modelClass.remove();
+            addTypeCheckIsMethod(modelClass);
+            addToJSONMethod(modelClass, propertiesInterface);
+            createGetterAndSetterForProperty(modelClass, propertiesInterface, state.apiTypes);
+            addPropertiesClassConstructor(modelClass, propertiesInterface);
         }
     });
 }
@@ -552,7 +556,11 @@ async function postProcessModels(modelsDir: string, state: GenerationState) {
                     // Processing files one by one without giving access to FS directly,
                     // for some reason it causes problems with imports.
                     // Most likley it could be fixed with proper tsconfig.json
-                    const sourceFile = new Project().createSourceFile(file, content);
+                    const project = new Project({
+                        skipFileDependencyResolution: true,
+                    });
+
+                    const sourceFile = project.createSourceFile(file, content);
                     postProcessSourceFile(sourceFile, state);
         
                     await fsPromises.writeFile(filePath, sourceFile.getFullText());
@@ -613,17 +621,17 @@ function copyModels(modelsDir: string, outputDir: string) {
 
 function generateFactoryList(outputDir: string, factoryGenerationProperties: FactoryGenerationProperties[]) {
 
-    const factoryContents = dedent(`
-    import { FactoryFunction } from '../base/FactoryFunction.js';
-    import * as k8s from './k8s.js';
-
-    export const FACTORY_LIST: [string, FactoryFunction][] = [
-        ${factoryGenerationProperties.map(prop => {
+    const factoryContents = [
+    `import { FactoryFunction } from '../base/FactoryFunction.js';`,
+    `import * as k8s from './k8s.js';`,
+    ``,
+    `export const FACTORY_LIST: [string, FactoryFunction][] = [`,
+    ...factoryGenerationProperties.map(prop => {
             const fullName = ['k8s', ...prop.path.split('/')].join('.');
-            return `['${groupVersionKindToString(prop.groupVersionKind)}', (json: any) => new ${fullName}(json)]`;
-        }).join(',\n    ')}
-    ];
-    `);
+            return `    ['${groupVersionKindToString(prop.groupVersionKind)}', (json: object) => new ${fullName}(json as ${fullName}Properties)],`;
+        }),
+    `];`,
+    ].join('\n');
 
     writeFileSync(path.join(outputDir, 'FactoryList.ts'), factoryContents);
 }
@@ -650,8 +658,9 @@ export async function generate(version: string, outputDir: string) {
 
     const state: GenerationState = {
         nameComponentsMapping: new Map(),
+        apiTypes: new Set<string>(),
         nameToGroupVersionKind: new Map(),
-        apiResourceProperties: new Map(),
+        resourceProperties: new Map(),
         factoryGenerationProperties: [],
     };
 

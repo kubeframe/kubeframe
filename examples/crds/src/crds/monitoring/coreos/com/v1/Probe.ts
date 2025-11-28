@@ -1,4 +1,4 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
+import { k8s, NamespacedAPIObject } from "@kubeframe/kubeframe-version";
 
 interface ProbeSpec {
 
@@ -1071,8 +1071,8 @@ interface ProbeSpec {
  *
  * `Prometheus` and `PrometheusAgent` objects select `Probe` objects using label and namespace selectors.
  */
-export interface ProbeArgs {
-  metadata: k8s.meta.v1.NamespacedObjectMeta;
+export interface ProbeProperties {
+  metadata: {};
   /**
    * spec defines the specification of desired Ingress selection for target discovery by Prometheus.
    */
@@ -1143,13 +1143,20 @@ export interface ProbeArgs {
   };
 }
 
-export class Probe extends NamespacedAPIResource {
+export class Probe extends NamespacedAPIObject {
     spec: ProbeSpec;
     status?: { bindings?: { conditions?: { lastTransitionTime: string; message?: string; observedGeneration?: number; reason?: string; status: string; type: "Accepted"; }[]; group: "monitoring.coreos.com"; name: string; namespace: string; resource: "prometheuses" | "prometheusagents" | "thanosrulers" | "alertmanagers"; }[]; };
 
-    constructor(args: ProbeArgs) {
-        super('monitoring.coreos.com/v1', 'Probe', args.metadata);
-        this.spec = args.spec;
-        this.status = args.status;
+    constructor(properties: ProbeProperties) {
+        super('monitoring.coreos.com/v1', 'Probe', properties.metadata);
+
+            if (properties.spec === undefined) {
+                throw new Error('Property spec is required by Probe');
+            } else {
+                this['spec'] = properties['spec'];
+            }
+
+
+            this['status'] = properties['status'];
     }
 }

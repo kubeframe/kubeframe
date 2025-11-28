@@ -1,6 +1,7 @@
 import { APIResource } from "./APIResource.js";
 import { FactoryFunction } from "./FactoryFunction.js";
 import { FACTORY_LIST } from "../generated/FactoryList.js";
+import { getLogger } from "../Logger.js";
 
 export class APIResourceFactory {
 
@@ -10,7 +11,7 @@ export class APIResourceFactory {
 
     static registerResource(key: string, factory: FactoryFunction) {
         if (APIResourceFactory.mapping.has(key)) {
-            console.info(`Factory for ${key} already registered, skipping`);
+            getLogger().info(`Factory for ${key} already registered, skipping`);
         }
 
         APIResourceFactory.mapping.set(key, factory);

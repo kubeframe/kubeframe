@@ -1,4 +1,4 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
+import { k8s, NamespacedAPIObject } from "@kubeframe/kubeframe-version";
 
 interface AlertmanagerConfigSpec {
 
@@ -10056,19 +10056,24 @@ interface AlertmanagerConfigSpec {
  * AlertmanagerConfig configures the Prometheus Alertmanager,
  * specifying how alerts should be grouped, inhibited and notified to external systems.
  */
-export interface AlertmanagerConfigArgs {
-  metadata: k8s.meta.v1.NamespacedObjectMeta;
+export interface AlertmanagerConfigProperties {
+  metadata: {};
   /**
    * spec defines the specification of AlertmanagerConfigSpec
    */
   spec: AlertmanagerConfigSpec;
 }
 
-export class AlertmanagerConfig extends NamespacedAPIResource {
+export class AlertmanagerConfig extends NamespacedAPIObject {
     spec: AlertmanagerConfigSpec;
 
-    constructor(args: AlertmanagerConfigArgs) {
-        super('monitoring.coreos.com/v1alpha1', 'AlertmanagerConfig', args.metadata);
-        this.spec = args.spec;
+    constructor(properties: AlertmanagerConfigProperties) {
+        super('monitoring.coreos.com/v1alpha1', 'AlertmanagerConfig', properties.metadata);
+
+            if (properties.spec === undefined) {
+                throw new Error('Property spec is required by AlertmanagerConfig');
+            } else {
+                this['spec'] = properties['spec'];
+            }
     }
 }

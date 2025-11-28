@@ -1,4 +1,4 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
+import { k8s, NamespacedAPIObject } from "@kubeframe/kubeframe-version";
 
 interface AlertmanagerSpec {
 
@@ -8209,8 +8209,8 @@ interface AlertmanagerSpec {
  *
  * The resource defines via label and namespace selectors which `AlertmanagerConfig` objects should be associated to the deployed Alertmanager instances.
  */
-export interface AlertmanagerArgs {
-  metadata: k8s.meta.v1.NamespacedObjectMeta;
+export interface AlertmanagerProperties {
+  metadata: {};
   /**
    * spec defines the specification of the desired behavior of the Alertmanager cluster. More info:
    * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
@@ -8286,13 +8286,20 @@ export interface AlertmanagerArgs {
   };
 }
 
-export class Alertmanager extends NamespacedAPIResource {
+export class Alertmanager extends NamespacedAPIObject {
     spec: AlertmanagerSpec;
     status?: { availableReplicas?: number; conditions?: { lastTransitionTime: string; message?: string; observedGeneration?: number; reason?: string; status: string; type: string; }[]; paused?: boolean; replicas?: number; selector?: string; unavailableReplicas?: number; updatedReplicas?: number; };
 
-    constructor(args: AlertmanagerArgs) {
-        super('monitoring.coreos.com/v1', 'Alertmanager', args.metadata);
-        this.spec = args.spec;
-        this.status = args.status;
+    constructor(properties: AlertmanagerProperties) {
+        super('monitoring.coreos.com/v1', 'Alertmanager', properties.metadata);
+
+            if (properties.spec === undefined) {
+                throw new Error('Property spec is required by Alertmanager');
+            } else {
+                this['spec'] = properties['spec'];
+            }
+
+
+            this['status'] = properties['status'];
     }
 }

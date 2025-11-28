@@ -1,4 +1,4 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
+import { k8s, NamespacedAPIObject } from "@kubeframe/kubeframe-version";
 
 interface PrometheusRuleSpec {
 
@@ -97,8 +97,8 @@ interface PrometheusRuleSpec {
  *
  * `Prometheus` and `ThanosRuler` objects select `PrometheusRule` objects using label and namespace selectors.
  */
-export interface PrometheusRuleArgs {
-  metadata: k8s.meta.v1.NamespacedObjectMeta;
+export interface PrometheusRuleProperties {
+  metadata: {};
   /**
    * spec defines the specification of desired alerting rule definitions for Prometheus.
    */
@@ -169,13 +169,20 @@ export interface PrometheusRuleArgs {
   };
 }
 
-export class PrometheusRule extends NamespacedAPIResource {
+export class PrometheusRule extends NamespacedAPIObject {
     spec: PrometheusRuleSpec;
     status?: { bindings?: { conditions?: { lastTransitionTime: string; message?: string; observedGeneration?: number; reason?: string; status: string; type: "Accepted"; }[]; group: "monitoring.coreos.com"; name: string; namespace: string; resource: "prometheuses" | "prometheusagents" | "thanosrulers" | "alertmanagers"; }[]; };
 
-    constructor(args: PrometheusRuleArgs) {
-        super('monitoring.coreos.com/v1', 'PrometheusRule', args.metadata);
-        this.spec = args.spec;
-        this.status = args.status;
+    constructor(properties: PrometheusRuleProperties) {
+        super('monitoring.coreos.com/v1', 'PrometheusRule', properties.metadata);
+
+            if (properties.spec === undefined) {
+                throw new Error('Property spec is required by PrometheusRule');
+            } else {
+                this['spec'] = properties['spec'];
+            }
+
+
+            this['status'] = properties['status'];
     }
 }

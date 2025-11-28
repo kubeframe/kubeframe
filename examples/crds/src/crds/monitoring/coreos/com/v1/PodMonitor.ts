@@ -1,4 +1,4 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
+import { k8s, NamespacedAPIObject } from "@kubeframe/kubeframe-version";
 
 interface PodMonitorSpec {
 
@@ -1053,8 +1053,8 @@ interface PodMonitorSpec {
  *
  * `Prometheus` and `PrometheusAgent` objects select `PodMonitor` objects using label and namespace selectors.
  */
-export interface PodMonitorArgs {
-  metadata: k8s.meta.v1.NamespacedObjectMeta;
+export interface PodMonitorProperties {
+  metadata: {};
   /**
    * spec defines the specification of desired Pod selection for target discovery by Prometheus.
    */
@@ -1125,13 +1125,20 @@ export interface PodMonitorArgs {
   };
 }
 
-export class PodMonitor extends NamespacedAPIResource {
+export class PodMonitor extends NamespacedAPIObject {
     spec: PodMonitorSpec;
     status?: { bindings?: { conditions?: { lastTransitionTime: string; message?: string; observedGeneration?: number; reason?: string; status: string; type: "Accepted"; }[]; group: "monitoring.coreos.com"; name: string; namespace: string; resource: "prometheuses" | "prometheusagents" | "thanosrulers" | "alertmanagers"; }[]; };
 
-    constructor(args: PodMonitorArgs) {
-        super('monitoring.coreos.com/v1', 'PodMonitor', args.metadata);
-        this.spec = args.spec;
-        this.status = args.status;
+    constructor(properties: PodMonitorProperties) {
+        super('monitoring.coreos.com/v1', 'PodMonitor', properties.metadata);
+
+            if (properties.spec === undefined) {
+                throw new Error('Property spec is required by PodMonitor');
+            } else {
+                this['spec'] = properties['spec'];
+            }
+
+
+            this['status'] = properties['status'];
     }
 }

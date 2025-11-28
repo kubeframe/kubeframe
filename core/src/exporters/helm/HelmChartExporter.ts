@@ -1,12 +1,12 @@
 import * as path from "path";
-import { APIResource, NamespacedAPIResource } from "./base/APIResource.js";
-import { CollectedResource, ResourceCollector, ResourceFilter } from "./ResourceCollector.js";
+import { APIObject, isNamespacedAPIObject } from "../../base/APIResource.js";
 import { mkdirSync, statSync, writeFileSync } from "fs";
 import * as YAML from "yaml";
-import { resourceToYaml } from "./YAML.js";
-import { YAMLExporter } from "./YAMLExporter.js";
+import { resourceToYaml } from "../../YAML.js";
+import { YAMLExporter } from "../../YAMLExporter.js";
+import { Application } from "../../Application.js";
 
-export type TemplateNameBulder = (resource: CollectedResource) => string;
+export type TemplateNameBulder = (resource: APIObject) => string;
 
 function fsFriendlyApiVersion(apiVersion: string): string {
     return apiVersion
@@ -15,19 +15,15 @@ function fsFriendlyApiVersion(apiVersion: string): string {
         .toLowerCase();
 }
 
-function defaultTemplateNameBuilder(resource: CollectedResource): string {
+function defaultTemplateNameBuilder(resource: APIObject): string {
     // Use double _ (__) as name component delimiter
     // For dots in apiVersion, we use single _ as delimiter
-    let fileName = `${fsFriendlyApiVersion(resource.resource.apiVersion)}__${resource.resource.kind.toLowerCase()}`;
-    if (isNamespacedAPIResource(resource.resource)) {
-        fileName += `__${resource.resource.metadata.namespace}`;
+    let fileName = `${fsFriendlyApiVersion(resource.apiVersion)}__${resource.kind.toLowerCase()}`;
+    if (isNamespacedAPIObject(resource)) {
+        fileName += `__${resource.metadata.namespace}`;
     }
 
-    return fileName + `__${resource.resource.metadata.name}.yaml`;
-}
-
-function isNamespacedAPIResource(resource: APIResource): resource is NamespacedAPIResource {
-    return resource instanceof NamespacedAPIResource;
+    return fileName + `__${resource.metadata.name}.yaml`;
 }
 
 export interface ChartExportOptions {
@@ -41,11 +37,11 @@ export interface ChartExportOptions {
 export class HelmChartExporter {
 
     constructor(
-        private resourceCollector: ResourceCollector,
+        private application: Application,
         private options: ChartExportOptions,
     ) {}
 
-    export(outputDir: string, resourceFilter?: ResourceFilter) {
+    export(outputDir: string) {
         const chartDir = `${outputDir}/${this.options.chartName}`;
         const templatesDir = `${chartDir}/templates`;
         const chart = {
@@ -65,26 +61,26 @@ export class HelmChartExporter {
 
         // Export all resources
         if (this.options.separateFiles) {
-            this.exportSeparateFiles(templatesDir, resourceFilter);
+            this.exportSeparateFiles(templatesDir);
         } else {
-            this.exportSingleFile(templatesDir, resourceFilter);
+            this.exportSingleFile(templatesDir);
         }
     }
 
-    private exportSeparateFiles(templatesDir: string, resourceFilter?: ResourceFilter) {
-        for (const resource of this.resourceCollector.getResources(resourceFilter)) {
+    private exportSeparateFiles(templatesDir: string) {
+        for (const resource of this.application.getResources()) {
 
             const fileName = this.options.templateNameBuilder
                 ? this.options.templateNameBuilder(resource)
                 : defaultTemplateNameBuilder(resource);
-            
-            writeFileSync(path.join(templatesDir, fileName), resourceToYaml(resource.resource));
+
+            writeFileSync(path.join(templatesDir, fileName), resourceToYaml(resource));
         }
     }
 
-    private exportSingleFile(templatesDir: string, resourceFilter?: ResourceFilter) {
-        const yamlExporter = new YAMLExporter(this.resourceCollector);
-        const resourcesYaml = yamlExporter.export(resourceFilter);
+    private exportSingleFile(templatesDir: string) {
+        const yamlExporter = new YAMLExporter();
+        const resourcesYaml = yamlExporter.export(this.application);
         writeFileSync(path.join(templatesDir, 'all.yaml'), resourcesYaml);
     }
 }

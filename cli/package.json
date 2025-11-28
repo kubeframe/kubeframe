@@ -40,8 +40,8 @@
     "latest-version": "^9.0.0",
     "lodash": "^4.17.21",
     "ts-morph": "^27.0.2",
-    "typescript": "^5.7.3",
-    "yaml": "^2.7.0"
+    "typescript": "^5.9.3",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

@@ -1,4 +1,4 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
+import { k8s, NamespacedAPIObject } from "@kubeframe/kubeframe-version";
 
 interface PrometheusServiceLevelSpec {
 
@@ -416,8 +416,8 @@ interface PrometheusServiceLevelSpec {
  * PrometheusServiceLevel is the expected service quality level using Prometheus
  * as the backend used by Sloth.
  */
-export interface PrometheusServiceLevelArgs {
-  metadata: k8s.meta.v1.NamespacedObjectMeta;
+export interface PrometheusServiceLevelProperties {
+  metadata: {};
   /**
    * ServiceLevelSpec is the spec for a PrometheusServiceLevel.
    */
@@ -448,13 +448,15 @@ export interface PrometheusServiceLevelArgs {
   };
 }
 
-export class PrometheusServiceLevel extends NamespacedAPIResource {
+export class PrometheusServiceLevel extends NamespacedAPIObject {
     spec?: PrometheusServiceLevelSpec;
     status?: { lastPromOpRulesSuccessfulGenerated?: string; observedGeneration: number; processedSLOs: number; promOpRulesGenerated: boolean; promOpRulesGeneratedSLOs: number; };
 
-    constructor(args: PrometheusServiceLevelArgs) {
-        super('sloth.slok.dev/v1', 'PrometheusServiceLevel', args.metadata);
-        this.spec = args.spec;
-        this.status = args.status;
+    constructor(properties: PrometheusServiceLevelProperties) {
+        super('sloth.slok.dev/v1', 'PrometheusServiceLevel', properties.metadata);
+
+            this['spec'] = properties['spec'];
+
+            this['status'] = properties['status'];
     }
 }

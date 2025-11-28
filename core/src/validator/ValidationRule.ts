@@ -1,4 +1,4 @@
-import { CollectedResource } from "../ResourceCollector.js";
+import { APIObject } from "../base/APIResource.js";
 import { ValidationError } from "./ValidationError.js";
 
 export abstract class ValidationRule {
@@ -12,7 +12,7 @@ export abstract class ValidationRule {
         this.isDynamic = isDynamic;
     }
 
-    abstract validate(resources: CollectedResource[]): Promise<ValidationError[]>;
+    abstract validate(resources: APIObject[]): Promise<ValidationError[]>;
 
     isDynamicRule(): boolean {
         return this.isDynamic;

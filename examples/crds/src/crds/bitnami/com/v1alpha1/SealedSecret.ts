@@ -1,4 +1,4 @@
-import { k8s, NamespacedAPIResource } from "@kubeframe/kubeframe-version";
+import { k8s, NamespacedAPIObject } from "@kubeframe/kubeframe-version";
 
 interface SealedSecretSpec {
 
@@ -62,8 +62,8 @@ interface SealedSecretSpec {
  * regular k8s Secret that has been sealed (encrypted) using the
  * controller's key.
  */
-export interface SealedSecretArgs {
-  metadata: k8s.meta.v1.NamespacedObjectMeta;
+export interface SealedSecretProperties {
+  metadata: {};
   /**
    * SealedSecretSpec is the specification of a SealedSecret.
    */
@@ -110,13 +110,20 @@ export interface SealedSecretArgs {
   };
 }
 
-export class SealedSecret extends NamespacedAPIResource {
+export class SealedSecret extends NamespacedAPIObject {
     spec: SealedSecretSpec;
     status?: { conditions?: { lastTransitionTime?: string; lastUpdateTime?: string; message?: string; reason?: string; status: string; type: string; }[]; observedGeneration?: number; };
 
-    constructor(args: SealedSecretArgs) {
-        super('bitnami.com/v1alpha1', 'SealedSecret', args.metadata);
-        this.spec = args.spec;
-        this.status = args.status;
+    constructor(properties: SealedSecretProperties) {
+        super('bitnami.com/v1alpha1', 'SealedSecret', properties.metadata);
+
+            if (properties.spec === undefined) {
+                throw new Error('Property spec is required by SealedSecret');
+            } else {
+                this['spec'] = properties['spec'];
+            }
+
+
+            this['status'] = properties['status'];
     }
 }

@@ -1,10 +1,10 @@
 import { readFileSync } from "fs";
-import { Frame } from "./Frame.js";
 import * as YAML from 'yaml';
 import { APIResourceFactory } from "./base/APIResourceFactory.js";
-import { ResourceCollector } from "./ResourceCollector.js";
+import { Component } from "./Component.js";
+import { APIObject } from "./base/APIResource.js";
 
-export class YAMLFrame extends Frame {
+export class YAMLComponent extends Component {
 
     private source: string;
 
@@ -18,18 +18,12 @@ export class YAMLFrame extends Frame {
         }
     }
 
-    async doPreBuild() { }
-
-    async doBuild(resourceCollector: ResourceCollector) {
+    async build() {
         const docs = YAML.parseAllDocuments(this.source);
         docs.forEach(doc => {
             const json = doc.toJSON();
             const resource = APIResourceFactory.createFromPlainJSON(json);
-            resourceCollector.addResource({
-                frame: this,
-            }, resource);
+            this.addResource(resource as APIObject);
         });
     }
-
-    async doPostBuild() { }
 }

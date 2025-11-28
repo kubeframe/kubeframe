@@ -1,19 +1,21 @@
 import { writeFileSync } from "fs";
-import { CollectedResource, ResourceCollector, ResourceFilter } from "./ResourceCollector.js";
 import { resourceToYaml } from "./YAML.js";
+import { Application, ResourceFilter } from "./Application.js";
+import { APIObject } from "./base/APIResource.js";
 
 export class YAMLExporter {
     
-    constructor(private resourceCollector: ResourceCollector) {}
+    constructor() {}
 
-    export(filter?: ResourceFilter): string {
-        const resources = this.resourceCollector.getResources();
+    export(application: Application, filter?: ResourceFilter): string {
+        
+        const resources = application.getSortedResources(filter);
+
         const yaml = resources
-            .filter(filter || (() => true))
             .map(resource => {
                 return [
                     this.printDocumentHeader(resource),
-                    resourceToYaml(resource.resource),
+                    resourceToYaml(resource),
                 ].join("\n");
             })
             .join("---\n");
@@ -21,14 +23,15 @@ export class YAMLExporter {
         return yaml;
     }
 
-    exportToFile(filePath: string, filter?: ResourceFilter) {
-        const yaml = this.export(filter);
+    exportToFile(filePath: string, application: Application, filter?: ResourceFilter) {
+        const yaml = this.export(application, filter);
         writeFileSync(filePath, yaml);
     }
 
-    private printDocumentHeader(resource: CollectedResource) {
+    private printDocumentHeader(resource: APIObject) {
         return [
-            "# SOURCE: " + resource.sourceInfo.frame.getName(),
+            "# Application: " + resource.getComponent().getApplication().getName(),
+            "# Component: " + resource.getComponent().getName(),
         ].join("\n");
     }
 }

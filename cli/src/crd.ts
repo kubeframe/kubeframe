@@ -5,7 +5,7 @@ import path = require('path');
 import { Project, SyntaxKind } from 'ts-morph';
 import * as YAML from 'yaml';
 import {
-    addClassConstructor,
+    addTopLevelClassConstructor,
     addToIndexImportTree,
     comparePropertyName,
     convertInterfaceToClass,
@@ -75,6 +75,10 @@ export async function generateFromConfigFile(file: string, output: string, kuber
     } catch (ex) {
         console.error(ex);
     }
+}
+
+export async function generateFromCluster(output: string) {
+    
 }
 
 async function generate(crd: CRD, output: string, kubernetesVersion: string) {
@@ -150,7 +154,9 @@ function updateAPIResourceFactory(file: string, groupVersionKind: GroupVersionKi
 
     const registerCRDs = sourceFile.getFunction('registerCRDs');
     if (registerCRDs) {
-        registerCRDs.addStatements(`APIResourceFactory.registerResource('${groupVersionKindToString(groupVersionKind)}', (json: any) => new ${alias}(json));`);
+        registerCRDs.addStatements(
+            `APIResourceFactory.registerResource('${groupVersionKindToString(groupVersionKind)}', (json: any) => new ${alias}(json as ${alias}Properties));`
+        );
     }
 
     project.saveSync();
@@ -169,7 +175,7 @@ function transformTSSource(
     // ObjectMeta import
     sourceFile.addImportDeclaration({
         moduleSpecifier: `@kubeframe/kubeframe-${kubernetesVersion}`,
-        namedImports: [ 'k8s', namespaced ? 'NamespacedAPIResource' : 'APIResource' ],
+        namedImports: [ 'k8s', namespaced ? 'NamespacedAPIObject' : 'APIObject' ],
     });
 
     const interfaces = sourceFile.getInterfaces();
@@ -177,8 +183,7 @@ function transformTSSource(
 
         const interfaceDeclaration = interfaces[0];
         interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'metadata'))
-            ?.setType(namespaced ? 'k8s.meta.v1.NamespacedObjectMeta' : 'k8s.meta.v1.ObjectMeta')
-            .setHasQuestionToken(false);
+            ?.setHasQuestionToken(false);
 
         // Extract spec into new interface
         const specProperty = interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'spec'));
@@ -200,7 +205,7 @@ function transformTSSource(
         }
 
         const interfaceName = interfaceDeclaration.getName();
-        const newInterfaceName = interfaceName + 'Args';
+        const newInterfaceName = interfaceName + 'Properties';
         interfaceDeclaration.rename(newInterfaceName);
 
         interfaceDeclaration.getProperty((prop) => comparePropertyName(prop.getName(), 'apiVersion'))?.remove();
@@ -213,9 +218,9 @@ function transformTSSource(
             modelClass.getProperty((prop) => comparePropertyName(prop.getName(), 'apiVersion'))?.remove();
             modelClass.getProperty((prop) => comparePropertyName(prop.getName(), 'kind'))?.remove();
             
-            modelClass.setExtends(namespaced ? 'NamespacedAPIResource' : 'APIResource');
+            modelClass.setExtends(namespaced ? 'NamespacedAPIObject' : 'APIObject');
 
-            addClassConstructor(modelClass, groupVersionKind, interfaceDeclaration);
+            addTopLevelClassConstructor(modelClass, groupVersionKind, interfaceDeclaration);
         }
     }
 

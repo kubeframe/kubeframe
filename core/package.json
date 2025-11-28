@@ -26,7 +26,13 @@
     "url": "git+https://github.com/kubeframe/kubeframe.git"
   },
   "dependencies": {
+    "@kubernetes/client-node": "^1.4.0",
+    "@types/json-merge-patch": "^1.0.0",
     "endent": "^2.1.0",
+    "json-merge-patch": "^1.0.2",
+    "pino": "^10.1.0",
+    "pino-pretty": "^13.1.2",
+    "uuid": "^13.0.0",
     "yaml": "^2.7.0"
   },
   "devDependencies": {

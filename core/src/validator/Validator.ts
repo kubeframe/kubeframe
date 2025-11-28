@@ -1,16 +1,16 @@
-import { ResourceCollector } from "../ResourceCollector.js";
-import { ServiceSelectorRule } from "./ServiceSelectorRule.js";
+import { Application } from "../Application.js";
+import { ServiceSelectorRule } from "./rules/ServiceSelectorRule.js";
 import { ValidationError } from "./ValidationError.js";
 import { ValidationRule } from "./ValidationRule.js";
 
 export class Validator {
 
-    private resourceCollector: ResourceCollector;
+    private application: Application;
 
     private rules: ValidationRule[] = [];
 
-    constructor (resourceCollector: ResourceCollector) {
-        this.resourceCollector = resourceCollector;
+    constructor (application: Application) {
+        this.application = application;
 
         this.rules.push(...[
             new ServiceSelectorRule(),
@@ -19,7 +19,7 @@ export class Validator {
 
     async validate(staticOnly: boolean): Promise<ValidationError[]> {
 
-        const resources = this.resourceCollector.getResources();
+        const resources = this.application.getResources();
 
         const results: ValidationError[] = [];
         for (const rule of this.rules) {
