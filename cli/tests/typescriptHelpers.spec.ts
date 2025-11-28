@@ -5,10 +5,10 @@ import { GroupVersionKind } from "../src/kubernetes.js";
 import assert from "node:assert";
 
 describe("typescriptHelpers", () => {
-    it("addClassConstructor", () => {
+    it("addTopLevelClassConstructor", () => {
         const project = new Project();
         const sourceFile = project.createSourceFile("test.ts", `
-        export interface TestKindArgs {
+        export interface TestKindProperties {
             prop1: string;
             metadata: object;
         }
@@ -18,7 +18,7 @@ describe("typescriptHelpers", () => {
         `);
 
         const modelClass = sourceFile.getClass("TestKind")!;
-        const interfaceDeclaration = sourceFile.getInterface("TestKindArgs")!;
+        const interfaceDeclaration = sourceFile.getInterface("TestKindProperties")!;
 
         const groupVersionKind: GroupVersionKind = {
             group: "testGroup",
@@ -34,9 +34,14 @@ describe("typescriptHelpers", () => {
         assert.strictEqual(constructor.getParameters()[0].getText(), "properties: TestKindProperties");
 
         const statements = constructor.getStatements().map(stmt => stmt.getText());
-        console.log(statements);
-        assert(statements.includes(`super('testGroup/v1', 'TestKind', properties.metadata);`));
-        assert(statements.includes(`\nif (properties.prop1 === undefined) {\n    throw new Error('Property prop1 is required by TestKind');\n} else {\n    this['prop1'] = properties['prop1'];\n}`));
+        assert(statements[0], dedentString(`
+            super('testGroup/v1', 'TestKind', properties.metadata);
+            if (properties.prop1 === undefined) {
+                throw new Error('Property prop1 is required by TestKind');
+            } else {
+                this['prop1'] = properties['prop1'];
+            }
+        `, 4));
     });
 
     it("removeImportFromTypeName", () => {
