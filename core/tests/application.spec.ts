@@ -1,17 +1,8 @@
 import assert from "assert";
 import { describe, it } from "mocha";
 import { DummyComponent } from "./dummyComponent.js";
-import { APIObject, APIResource, Application, k8s } from "../src/index.js";
-
-class DummyApplication extends Application {
-    constructor() {
-        super('ApplicationName');
-    }
-
-    async build(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-}
+import { APIObject, k8s } from "../src/index.js";
+import { DummyApplication } from "./dummyApplication.js";
 
 describe("Application tests", () => {
 
@@ -183,8 +174,6 @@ describe("Application tests", () => {
             },
         });
 
-        resource1.addDependency("v1/ConfigMap/default/test2");
-
         const resource2 = new k8s.core.v1.ConfigMap({
             metadata: {
                 name: "test2",
@@ -194,6 +183,8 @@ describe("Application tests", () => {
                 key: "value",
             },
         });
+
+        resource1.addDependency(resource2.getIdentifier());
 
         const resource3 = new k8s.core.v1.ConfigMap({
             metadata: {
@@ -205,8 +196,6 @@ describe("Application tests", () => {
             },
         });
 
-        resource3.addDependency("v1/ConfigMap/default/test4");
-
         const resource4 = new k8s.core.v1.ConfigMap({
             metadata: {
                 name: "test4",
@@ -216,6 +205,8 @@ describe("Application tests", () => {
                 key: "value",
             },
         });
+
+        resource3.addDependency(resource4.getIdentifier());
 
         component.addResource(resource1);
         component.addResource(resource2);
@@ -289,7 +280,7 @@ describe("Application tests", () => {
             },
         });
 
-        resource.addDependency("v1/ConfigMap/default/test2");
+        resource.addDependency(resource.getIdentifier());
 
         const resource2 = new k8s.core.v1.ConfigMap({
             metadata: {

@@ -1,5 +1,5 @@
 import { plainToInstance, Type } from "class-transformer";
-import { k8s, ValueReference } from "@kubeframe/kubeframe-version";
+import { k8s } from "@kubeframe/kubeframe-version";
 import { readFileSync } from "fs";
 import * as YAML from 'yaml';
 
