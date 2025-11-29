@@ -2,9 +2,66 @@
   "$ref": "#/definitions/Configuration",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
+    "ConfigMap": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Data of the config map",
+          "type": "object"
+        },
+        "name": {
+          "description": "Name of the config map",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "data"
+      ],
+      "type": "object"
+    },
+    "ConfigMapEnvSource": {
+      "additionalProperties": false,
+      "description": "ConfigMapEnvSource selects a ConfigMap to populate the environment variables with.  The contents of the target ConfigMap\\'s Data field will represent the key-value pairs as environment variables.",
+      "properties": {
+        "_name": {
+          "description": "Name of the referent. This field is effectively required, but due to backwards compatibility is allowed to be empty. Instances of this type with an empty value here are almost certainly wrong. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+          "type": "string"
+        },
+        "_optional": {
+          "description": "Specify whether the ConfigMap must be defined",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ConfigMapEnvSourceProperties": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Name of the referent. This field is effectively required, but due to backwards compatibility is allowed to be empty. Instances of this type with an empty value here are almost certainly wrong. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Specify whether the ConfigMap must be defined",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Configuration": {
       "additionalProperties": false,
       "properties": {
+        "configMaps": {
+          "description": "ConfigMaps to be created",
+          "items": {
+            "$ref": "#/definitions/ConfigMap"
+          },
+          "type": "array"
+        },
         "deployments": {
           "description": "Deployments to be created",
           "items": {
@@ -25,15 +82,29 @@
     "Container": {
       "additionalProperties": false,
       "properties": {
+        "envFrom": {
+          "items": {
+            "$ref": "#/definitions/EnvFromSourceProperties"
+          },
+          "type": "array"
+        },
+        "image": {
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "Image pull policy. One of Always, Never, IfNotPresent. Defaults to Always if :latest tag is specified, or IfNotPresent otherwise. Cannot be updated. More info: https://kubernetes.io/docs/concepts/containers/images#updating-images",
+          "type": "string"
+        },
         "name": {
           "type": "string"
         },
         "resources": {
-          "$ref": "#/definitions/ResourceRequirements"
+          "$ref": "#/definitions/ResourceRequirementsProperties"
         }
       },
       "required": [
-        "name"
+        "name",
+        "image"
       ],
       "type": "object"
     },
@@ -61,9 +132,58 @@
       ],
       "type": "object"
     },
+    "EnvFromSourceProperties": {
+      "additionalProperties": false,
+      "properties": {
+        "configMapRef": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ConfigMapEnvSource"
+            },
+            {
+              "$ref": "#/definitions/ConfigMapEnvSourceProperties"
+            }
+          ],
+          "description": "The ConfigMap to select from"
+        },
+        "prefix": {
+          "description": "Optional text to prepend to the name of each environment variable. May consist of any printable ASCII characters except \\'=\\'.",
+          "type": "string"
+        },
+        "secretRef": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SecretEnvSource"
+            },
+            {
+              "$ref": "#/definitions/SecretEnvSourceProperties"
+            }
+          ],
+          "description": "The Secret to select from"
+        }
+      },
+      "type": "object"
+    },
     "ResourceClaim": {
       "additionalProperties": false,
       "description": "ResourceClaim references one entry in PodSpec.ResourceClaims.",
+      "properties": {
+        "_name": {
+          "description": "Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.",
+          "type": "string"
+        },
+        "_request": {
+          "description": "Request is the name chosen for a request in the referenced claim. If empty, everything from the claim is made available, otherwise only the result of this request.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "_name"
+      ],
+      "type": "object"
+    },
+    "ResourceClaimProperties": {
+      "additionalProperties": false,
       "properties": {
         "name": {
           "description": "Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.",
@@ -79,16 +199,25 @@
       ],
       "type": "object"
     },
-    "ResourceRequirements": {
+    "ResourceRequirementsProperties": {
       "additionalProperties": false,
-      "description": "ResourceRequirements describes the compute resource requirements.",
       "properties": {
         "claims": {
-          "description": "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.  This field depends on the DynamicResourceAllocation feature gate.  This field is immutable. It can only be set for containers.",
-          "items": {
-            "$ref": "#/definitions/ResourceClaim"
-          },
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/ResourceClaim"
+              },
+              "type": "array"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/ResourceClaimProperties"
+              },
+              "type": "array"
+            }
+          ],
+          "description": "Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.  This field depends on the DynamicResourceAllocation feature gate.  This field is immutable. It can only be set for containers."
         },
         "limits": {
           "additionalProperties": {
@@ -113,6 +242,35 @@
       },
       "type": "object"
     },
+    "SecretEnvSource": {
+      "additionalProperties": false,
+      "description": "SecretEnvSource selects a Secret to populate the environment variables with.  The contents of the target Secret\\'s Data field will represent the key-value pairs as environment variables.",
+      "properties": {
+        "_name": {
+          "description": "Name of the referent. This field is effectively required, but due to backwards compatibility is allowed to be empty. Instances of this type with an empty value here are almost certainly wrong. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+          "type": "string"
+        },
+        "_optional": {
+          "description": "Specify whether the Secret must be defined",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "SecretEnvSourceProperties": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "description": "Name of the referent. This field is effectively required, but due to backwards compatibility is allowed to be empty. Instances of this type with an empty value here are almost certainly wrong. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+          "type": "string"
+        },
+        "optional": {
+          "description": "Specify whether the Secret must be defined",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Service": {
       "additionalProperties": false,
       "properties": {
@@ -122,7 +280,7 @@
         },
         "ports": {
           "items": {
-            "$ref": "#/definitions/ServicePort"
+            "$ref": "#/definitions/ServicePortProperties"
           },
           "type": "array"
         },
@@ -140,9 +298,8 @@
       ],
       "type": "object"
     },
-    "ServicePort": {
+    "ServicePortProperties": {
       "additionalProperties": false,
-      "description": "ServicePort contains information on service\\'s port.",
       "properties": {
         "appProtocol": {
           "description": "The application protocol for this port. This is used as a hint for implementations to offer richer behavior for protocols that they understand. This field follows standard Kubernetes label syntax. Valid values are either:  * Un-prefixed protocol names - reserved for IANA standard service names (as per RFC-6335 and https://www.iana.org/assignments/service-names).  * Kubernetes-defined prefixed names:   * \\'kubernetes.io/h2c\\' - HTTP/2 prior knowledge over cleartext as described in https://www.rfc-editor.org/rfc/rfc9113.html#name-starting-http-2-with-prior-   * \\'kubernetes.io/ws\\'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455   * \\'kubernetes.io/wss\\' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455  * Other protocols should use implementation-defined prefixed names such as mycompany.com/my-custom-protocol.",
@@ -165,7 +322,7 @@
           "type": "string"
         },
         "targetPort": {
-          "description": "Number or name of the port to access on the pods targeted by the service. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME. If this is a string, it will be looked up as a named port in the target Pod\\'s container ports. If this is not specified, the value of the \\'port\\' field is used (an identity map). This field is ignored for services with clusterIP=None, and should be omitted or set equal to the \\'port\\' field. More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service",
+          "description": "Number or name of the port to access on the pods targeted by the service. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME. If this is a string, it will be looked up as a named port in the target Pod\\'s container ports. If this is not specified, the value of the \\'port\\' field is used (an identity map). This field is ignored for services with clusterIP=None, and should be omitted or set equal to the \\'port\\' field. More info: ps://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service",
           "type": [
             "string",
             "number"

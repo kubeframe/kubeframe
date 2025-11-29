@@ -13,12 +13,14 @@ import {
     PreDeleteEventPayload,
     PrePatchEventPayload,
     PreWaitEventPayload,
+    ReleaseExpiredEventPayload,
     WaitResult,
 } from './KubernetesLifecycleEvent.js';
 import { APIResourceFactory, Application, k8s, ResourceWaiter } from '../../index.js';
 import * as jsonmergepatch from 'json-merge-patch';
 import { WAITERS } from './waiters/index.js';
 import { APIClient, KubernetesAPIClient } from './APIClient.js';
+import { Compress } from '../../util/Compress.js';
 
 export type EventListenerFunction = (eventData: KubernetesLifecycleEventPayload) => Promise<void>;
 
@@ -40,6 +42,7 @@ interface State {
     name: string;
     resources: APIObject[];
     metadata: Record<string, string>;
+    configMap: k8s.core.v1.ConfigMap;
 }
 
 interface ResourceSyncResult {
@@ -62,6 +65,7 @@ const DEFAULT_EXPORT_OPTIONS: Partial<KubernetesExportOptions> = {
 const MANAGED_BY_LABEL = 'app.kubernetes.io/managed-by';
 const RELEASE_NAME_LABEL = 'app.kubeframe/release-name';
 const RELEASE_STATE_LABEL = 'app.kubeframe/release-state';
+const RELEASE_COMPRESSED_ANNOTATION = 'app.kubeframe/release-state-compressed';
 const STATE_KEY = 'kubeframe-state';
 
 const MANAGED_BY = 'kubeframe';
@@ -82,12 +86,13 @@ export class KubernetesExporter {
         this.apiClient = this.options.apiClient || new KubernetesAPIClient(FIELD_MANAGER);
         // Register default waiters
         for (const waiter of WAITERS) {
-            this.waiterTypes.set(waiter.getResourceType(), waiter);
+            this.registerResourceWaiter(waiter);
         }
     }
 
-    registerResourceWaiter(resourceType: string, waiter: ResourceWaiter) {
-        this.waiterTypes.set(resourceType, waiter);
+    registerResourceWaiter(waiter: ResourceWaiter) {
+        this.logger.debug(`Registering waiter for resource type: ${waiter.getResourceType()}`);
+        this.waiterTypes.set(waiter.getResourceType(), waiter);
     }
 
     addEventListener(eventType: string, listener: EventListenerFunction) {
@@ -96,7 +101,10 @@ export class KubernetesExporter {
         this.eventListeners.set(eventType, listeners);
     }
 
-    async notifyEventListeners(eventType: string, eventData: KubernetesLifecycleEventPayload): Promise<void> {
+    async notifyEventListeners(
+        eventType: string, 
+        eventData: KubernetesLifecycleEventPayload,
+    ): Promise<void> {
         const listeners = this.eventListeners.get(eventType) || [];
         for (const listener of listeners) {
             await listener(eventData);
@@ -280,7 +288,7 @@ export class KubernetesExporter {
             }
         }
 
-        await this.deleteState(currentState.name);
+        await this.deleteState(currentState.configMap);
     }
 
     async destroy() {
@@ -308,6 +316,44 @@ export class KubernetesExporter {
         }
 
         await this.cleanupReleases(0);
+    }
+
+    async releases(): Promise<State[]> {
+
+        const labelSelector = this.createLabelSelector({
+            [MANAGED_BY_LABEL]: MANAGED_BY, 
+            [RELEASE_NAME_LABEL]: this.options.releaseName,
+            [RELEASE_STATE_LABEL]: 'true',
+        });
+
+        let configMaps: k8s.core.v1.ConfigMapList = undefined;
+        try {
+            let listResponse = await this.apiClient.list(
+                'v1',
+                'ConfigMap',
+                this.options.namespace,
+                labelSelector,
+            );
+
+            if (k8s.core.v1.ConfigMapList.is(listResponse)) {
+                configMaps = listResponse;
+            } else {
+                throw new Error('Invalid response from API client');
+            }
+        } catch (error) {
+            this.logger.error(`Failed to fetch existing releases for release: ${this.options.releaseName}`);
+            throw error;
+        }
+
+        configMaps.items.sort(sortByCreationTimestamp);
+
+        const releases: State[] = [];
+        for (const configMap of configMaps.items) {
+            const release = await this.parseReleaseState(configMap);
+            releases.push(release);
+        }
+
+        return releases;
     }
 
     private async fetchClusterResources(resources: APIObject[]): Promise<Map<string, APIObject>> {
@@ -347,6 +393,8 @@ export class KubernetesExporter {
     private async storeState(newState: string) {
         const configMapName = this.generateNewStateConfigMapName(this.options.releaseName);
 
+        const compressedState = await new Compress().compress(newState);
+
         const configMap = new k8s.core.v1.ConfigMap({
             metadata: {
                 name: configMapName,
@@ -356,9 +404,12 @@ export class KubernetesExporter {
                     [RELEASE_NAME_LABEL]: this.options.releaseName,
                     [RELEASE_STATE_LABEL]: 'true',
                 },
+                annotations: {
+                    [RELEASE_COMPRESSED_ANNOTATION]: 'true',
+                },
             },
             data: {
-                [STATE_KEY]: newState,
+                [STATE_KEY]: compressedState,
                 ...(this.options.releaseMetadata || {}),
             },
         });
@@ -367,7 +418,7 @@ export class KubernetesExporter {
         if (!this.options.dryRun) {
             try {
                 this.logger.info(`Storing new state ConfigMap: ${configMapName} for release: ${this.options.releaseName}`);
-                await this.apiClient.create(configMap);
+                await this.apiClient.create(configMap.toJSON());
                 this.logger.info(`Successfully stored new state ConfigMap: ${configMapName}`);
             } catch (error) {
                 this.logger.error(`Failed to store new state ConfigMap: ${configMapName} for release: ${this.options.releaseName}`);
@@ -380,7 +431,7 @@ export class KubernetesExporter {
         await this.cleanupReleases(this.options.numberOfReleasesToKeep);
     }
 
-    private async getState(offset: number = 0): Promise<State | null> {
+    private async getState(offset: number = 0): Promise<State | undefined> {
 
         const labelSelector = this.createLabelSelector({
             [MANAGED_BY_LABEL]: MANAGED_BY, 
@@ -388,58 +439,74 @@ export class KubernetesExporter {
             [RELEASE_STATE_LABEL]: 'true',
         });
 
+        let configMaps: k8s.core.v1.ConfigMapList = undefined;
         try {
+
             this.logger.info(`Fetching existing state ConfigMap for release: ${this.options.releaseName}`);
-            const configMaps = await this.apiClient.list(
+            let listResponse = await this.apiClient.list(
                 'v1',
                 'ConfigMap',
                 this.options.namespace,
                 labelSelector,
             );
 
-            if (!k8s.core.v1.ConfigMapList.is(configMaps)) {
+            if (k8s.core.v1.ConfigMapList.is(listResponse)) {
+                configMaps = listResponse;
+            } else {
                 throw new Error('Invalid response from API client');
             }
 
-            configMaps.items.sort(sortByCreationTimestamp);
-
-            if (configMaps.items.length > offset) {
-                const latestConfigMap = configMaps.items[offset];
-                const stateData = latestConfigMap.data ? latestConfigMap.data[STATE_KEY] : null;
-                this.logger.info(`Successfully fetched existing state ConfigMap: ${latestConfigMap.metadata?.name} for release: ${this.options.releaseName}`);
-                
-                let parsedState = undefined;
-
-                try {
-                    parsedState = JSON.parse(stateData || '{resources: []}');
-                } catch (error) {
-                    this.logger.error(`Failed to parse state data: ${stateData}`);
-                    throw error;
-                }
-
-                const resources = parsedState.resources.map((resource: any) => {
-                    return APIResourceFactory.createFromPlainJSON(resource);
-                });
-
-                const metadata = {};
-                for (const key of Object.keys(latestConfigMap.data).filter((key: string) => key !== STATE_KEY)) {
-                    metadata[key] = latestConfigMap.data[key];
-                }
-
-                return {
-                    name: latestConfigMap.metadata?.name,
-                    resources,
-                    metadata,
-                };
-            }
-
-            this.logger.info(`No existing state ConfigMap found for release: ${this.options.releaseName}`);
-
         } catch (error) {
             this.logger.error(`Failed to fetch existing state ConfigMap for release: ${this.options.releaseName}`);
+            throw error;
         }
 
-        return null;
+        configMaps.items.sort(sortByCreationTimestamp);
+
+        if (configMaps.items.length < offset || !configMaps.items[offset]) {
+            this.logger.info(`No existing state ConfigMap found for release: ${this.options.releaseName}`);
+            return undefined;
+        }
+
+        const configMap = configMaps.items[offset];
+        
+        return this.parseReleaseState(configMap);
+    }
+
+    private async parseReleaseState(configMap: k8s.core.v1.ConfigMap): Promise<State> {
+
+        const stateData = configMap.data ? configMap.data[STATE_KEY] : null;
+        if (!stateData) {
+            throw new Error(`Found config map with name ${configMap.metadata?.name} but without state data`);
+        }
+
+        let parsedState = undefined;
+        try {
+            let decompressedState = stateData;
+            if (configMap.metadata.annotations?.[RELEASE_COMPRESSED_ANNOTATION] === 'true') {
+                decompressedState = await new Compress().decompress(decompressedState);
+            }
+            parsedState = JSON.parse(decompressedState);
+        } catch (error) {
+            this.logger.error(`Failed to parse state data: ${stateData}`);
+            throw error;
+        }
+
+        const resources = parsedState.resources.map((resource: any) => {
+            return APIResourceFactory.createFromPlainJSON(resource);
+        });
+
+        const metadata = {};
+        for (const key of Object.keys(configMap.data).filter((key: string) => key !== STATE_KEY)) {
+            metadata[key] = configMap.data[key];
+        }
+
+        return {
+            name: configMap.metadata?.name,
+            resources,
+            metadata,
+            configMap,
+        };
     }
 
     private async cleanupReleases(keep: number) {
@@ -470,7 +537,7 @@ export class KubernetesExporter {
         const deletedReleases = [];
         for (const configMap of releasesToDelete) {
             try {
-                await this.deleteState(configMap.getName());
+                await this.deleteState(configMap);
                 deletedReleases.push(configMap.getName());
             } catch (error) {
                 this.logger.error(`Failed to delete old release: ${configMap.getName()}`);
@@ -483,7 +550,9 @@ export class KubernetesExporter {
         }
     }
 
-    private async deleteState(stateName: string) {
+    private async deleteState(configMap: k8s.core.v1.ConfigMap) {
+
+        const stateName = configMap.getName();
 
         if (this.options.dryRun) {
             this.logger.info(`[DRY RUN] Would have deleted state ConfigMap: ${stateName} for release: ${this.options.releaseName}`);
@@ -491,12 +560,19 @@ export class KubernetesExporter {
         }
 
         try {
-            await this.apiClient.delete(new APIObject(
-                'v1',
-                'ConfigMap',
-                { name: stateName, namespace: this.options.namespace },
-            ));
-            
+            await this.apiClient.delete(configMap.toJSON());
+
+            const releaseState = await this.parseReleaseState(configMap);
+
+            await this.notifyEventListeners(
+                KubernetesLifecycleEvent.RELEASE_EXPIRED,
+                new ReleaseExpiredEventPayload(
+                    this.options.releaseName, 
+                    releaseState.resources,
+                    releaseState.metadata,
+                    configMap,
+                ),
+            );
         } catch (error) {
             this.logger.error(`Failed to delete state: ${stateName}`);
             throw error;
@@ -510,7 +586,7 @@ export class KubernetesExporter {
             .join(',');
     }
 
-    private async getExistingResource(resource: APIObject) {
+    private async getExistingResource(resource: APIObject): Promise<APIObject | undefined> {
 
         this.logger.info(`Checking for existing resource in cluster - ${resource.getIdentifier()}`);
 
@@ -530,9 +606,11 @@ export class KubernetesExporter {
             return existing;
         } catch (err: any) {
             if (err.code === 404) {
-                return null;
+                this.logger.info(`Resource not found in cluster: ${resource.getIdentifier()}`);
+                return undefined;
+            } else {
+                throw err;
             }
-            throw err;
         }
     }
 
@@ -554,8 +632,10 @@ export class KubernetesExporter {
             resource.setLabel(MANAGED_BY_LABEL, MANAGED_BY);
             resource.setLabel(RELEASE_NAME_LABEL, this.options.releaseName);
 
+            this.logger.debug({ resource: resource.toJSON() }, `Creating resource ${fullName}`);
+
             const created = await this.apiClient.create(
-                resource
+                resource.toJSON(),
             );
 
             await this.notifyEventListeners(
@@ -567,14 +647,14 @@ export class KubernetesExporter {
             await this.waitForResourceReady(resource);
             return created as APIObject;
         } catch (err: any) {
-            this.logger.error(`Failed to create resource: ${fullName}`);
+            this.logger.error({ error: err }, `Failed to create resource: ${fullName}`);
             throw err;
         }
     }
     
     private async patchResource(
         resource: APIObject, 
-        existingResource: k8sClient.KubernetesObject,
+        existingResource: APIObject,
     ) {
 
         if (this.options.dryRun) {
@@ -585,27 +665,39 @@ export class KubernetesExporter {
         const fullName = resource.getIdentifier();
 
         try {
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.PRE_PATCH, 
-                new PrePatchEventPayload(resource),
-            );
 
-            resource.setLabel(MANAGED_BY_LABEL, MANAGED_BY);
+            resource.setLabel(MANAGED_BY_LABEL, MANAGED_BY);resource.setLabel(MANAGED_BY_LABEL, MANAGED_BY);
             resource.setLabel(RELEASE_NAME_LABEL, this.options.releaseName);
 
-            const patch = jsonmergepatch.generate(existingResource, resource);
+            const patch = jsonmergepatch.generate(existingResource.toJSON(), resource.toJSON());
+
+            if (!patch) {
+                this.logger.info(`No patch generated for resource ${fullName}. Skipping patch.`);
+                return existingResource;
+            }
+
+            this.logger.debug({ patch: patch }, `Generated patch for resource ${fullName}`);
 
             patch.apiVersion = resource.apiVersion;
             patch.kind = resource.kind;
             patch.metadata = resource.metadata;
 
-            this.logger.debug(patch, `Generated patch for resource ${fullName}`);
+            await this.notifyEventListeners(
+                KubernetesLifecycleEvent.PRE_PATCH, 
+                new PrePatchEventPayload(
+                    resource, 
+                    existingResource, 
+                    patch,
+                ),
+            );
+
+            this.logger.debug({ patch: patch }, `Generated patch for resource ${fullName}`);
 
             const patched = await this.apiClient.patch(
                 patch,
             );
 
-            this.logger.debug(patched, `Patched resource ${fullName}`);
+            this.logger.debug({ patched: patched }, `Patched resource ${fullName}`);
 
             await this.notifyEventListeners(
                 KubernetesLifecycleEvent.POST_PATCH, 
@@ -616,7 +708,7 @@ export class KubernetesExporter {
             await this.waitForResourceReady(resource);
             return patched;
         } catch (err: any) {
-            this.logger.error(`Failed to patch resource: ${fullName}`);
+            this.logger.error({ error: err }, `Failed to patch resource: ${fullName}`);
             throw err;
         }
     }
@@ -636,7 +728,7 @@ export class KubernetesExporter {
                 new PreDeleteEventPayload(resource),
             );
             
-            const deleted = await this.apiClient.delete(resource);
+            const deleted = await this.apiClient.delete(resource.toJSON());
 
             await this.notifyEventListeners(
                 KubernetesLifecycleEvent.POST_DELETE,

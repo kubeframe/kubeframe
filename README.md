@@ -18,6 +18,7 @@ Kubeframe is a set of tools and Typescript libraries to build flexible and reusa
 * Utility classes to import Kubernetes resources from YAML files and Helm template generated YAML files.
 * Export Kubernetes resources as YAML files.
 * Export Kubernetes resources as Helm Charts.
+* Export Kubernetes resources to Kubernetes.
 
 ## Getting started
 

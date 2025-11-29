@@ -191,7 +191,8 @@ export class APIObject extends APIResource {
 
     toJSON(): any {
         const json = {
-            ...this,
+            apiVersion: this.apiVersion,
+            kind: this.kind,
             metadata: {
                 ...this.metadata.toJSON(),
                 annotations: {
@@ -202,11 +203,6 @@ export class APIObject extends APIResource {
                 },
             },
         };
-
-        // Delete non Kubernetes API properties
-        delete json.component;
-        delete json.dependsOn;
-        delete json.dependents;
 
         return json;
     }
@@ -269,7 +265,8 @@ export class APIObjectList extends APIResource {
 
     toJSON(): any {
         return {
-            ...this,
+            apiVersion: this.apiVersion,
+            kind: this.kind,
             metadata: this.metadata.toJSON(),
         };
     }

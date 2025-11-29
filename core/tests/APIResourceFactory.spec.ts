@@ -1,5 +1,3 @@
-import "reflect-metadata";
-
 import { APIResourceFactory } from "../src/base/APIResourceFactory.js";
 import assert from "assert";
 import { describe, it } from "mocha";
@@ -42,7 +40,6 @@ describe("APIResourceFactory", () => {
 
         // Act
         const resource = APIResourceFactory.createFromPlainJSON(json);
-        console.log(resource);
         // Assert
         assert.ok(k8s.apps.v1.Deployment.is(resource));
     });
@@ -86,8 +83,9 @@ describe("APIResourceFactory", () => {
             },
         });
 
-        assert.strictEqual(deployment.spec?.replicas, 1);
+        assert.ok(k8s.apps.v1.DeploymentSpec.is(deployment.spec));
 
-        console.log(JSON.stringify(deployment, null, 2));
+        assert.strictEqual(deployment.spec?.replicas, 1);
+        assert.strictEqual(deployment.spec?.template?.spec?.containers[0]?.env?.[0]?.name, "TEST");
     });
 });

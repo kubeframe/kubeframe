@@ -5,6 +5,11 @@ import * as YAML from 'yaml';
 
 export class Container {
     name!: string;
+
+    image!: string;
+
+    imagePullPolicy: k8s.core.v1.ContainerProperties['imagePullPolicy'] = 'IfNotPresent';
+
     // When using types from @kubeframe/kubeframe, schemas will contain documentation linking to the official Kubernetes documentation.
     resources?: k8s.core.v1.ResourceRequirementsProperties = {
         limits: {
@@ -16,6 +21,8 @@ export class Container {
             memory: "128Mi",
         },
     };
+
+    envFrom?: k8s.core.v1.EnvFromSourceProperties[];
 }
 
 export class Deployment {
@@ -41,12 +48,30 @@ export class Service {
     selector!: { [key: string]: string };
 }
 
+export class ConfigMap {
+    /**
+     * Name of the config map
+     */
+    name!: string;
+
+    /**
+     * Data of the config map
+     */
+    data!: { [key: string]: string };
+}
+
 export class Configuration {
     /**
      * Deployments to be created
      */
     @Type(() => Deployment)
     deployments?: Deployment[];
+
+    /**
+     * ConfigMaps to be created
+     */
+    @Type(() => ConfigMap)
+    configMaps?: ConfigMap[];
 
     /**
      * Services to be created

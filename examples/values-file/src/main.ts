@@ -1,6 +1,13 @@
 import "reflect-metadata";
 
-import { getLogger, KubernetesExporter } from '@kubeframe/kubeframe-version';
+import { 
+    getLogger, 
+    KubernetesExporter, 
+    KubernetesLifecycleEvent, 
+    PostPatchEventPayload, 
+    PrePatchEventPayload, 
+    ReleaseExpiredEventPayload,
+} from '@kubeframe/kubeframe-version';
 import { MyApplication } from "./application.js";
 
 async function run() {
@@ -11,15 +18,38 @@ async function run() {
 
     const kubernetesExporter = new KubernetesExporter({
         releaseName: 'test-release',
-        namespace: 'values-file-example',
-        dryRun: true,
+        namespace: 'example-namespace',
+        dryRun: false,
         releaseMetadata: {
             'my-key': 'my-value',
             'my-key2': 'my-value2',
         },
+        numberOfReleasesToKeep: 2,
+    });
+
+    kubernetesExporter.addEventListener(KubernetesLifecycleEvent.RELEASE_EXPIRED, async (event) => {
+        if (event instanceof ReleaseExpiredEventPayload) {
+            getLogger().info(`${event.configMap.getName()} release expired`);
+        }
+    });
+
+    kubernetesExporter.addEventListener(KubernetesLifecycleEvent.PRE_PATCH, async (event) => {
+        if (event instanceof PrePatchEventPayload) {
+            getLogger().info(`${event.existingResource.getIdentifier()} pre-patched`);
+        }
+    });
+
+    kubernetesExporter.addEventListener(KubernetesLifecycleEvent.POST_PATCH, async (event) => {
+        if (event instanceof PostPatchEventPayload) {
+            getLogger().info(`${event.response.getIdentifier()} patched`);
+        }
     });
 
     try {
+
+        //const releases = await kubernetesExporter.releases();
+        //getLogger().info('Releases', releases);
+
         // Export the application
         await kubernetesExporter.export(application);
 

@@ -1,24 +1,22 @@
 # yaml-language-server: $schema=./schema.json
 deployments:
   - name: my-deployment
-    labels:
-      app: $ref('my-deployment-app-label', 'my-deployment')
-    replicas: 3
+    replicas: 2
     containers:
-      - name: my-container
-      - name: with-resources
+      - name: echo-server
+        image: k8s.gcr.io/e2e-test-images/echoserver:2.5
         resources:
           limits:
-            cpu: 1
-            memory: 1Gi
+            cpu: 100m
+            memory: 128Mi
           requests:
-            cpu: 0.5
-            memory: 500Mi
+            cpu: 10m
+            memory: 64Mi
         envFrom:
           - configMapRef:
-              name: $useRef('my-configmap')
+              name: my-configmap-v2
 configMaps:
-  - name: $ref('my-configmap', 'my-configmap')
+  - name: my-configmap-v2
     data:
       key1: value1
       key2: value2

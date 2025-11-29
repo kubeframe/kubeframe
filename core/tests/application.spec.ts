@@ -215,7 +215,6 @@ describe("Application tests", () => {
         // Act
         const resources = application.getSortedResources();
 
-        console.log(JSON.stringify(resources, null, 2));
         // Assert
         assert.strictEqual(resources.length, 4);
         assert.strictEqual(resources[0], resource2);
@@ -280,8 +279,6 @@ describe("Application tests", () => {
             },
         });
 
-        resource.addDependency(resource.getIdentifier());
-
         const resource2 = new k8s.core.v1.ConfigMap({
             metadata: {
                 name: "test2",
@@ -293,14 +290,14 @@ describe("Application tests", () => {
             },
         });
 
+        resource.addDependency(resource2.getIdentifier());
+
         component.addResource(resource);
         component.addResource(resource2);
         // Act
         component.setNamespace("custom-namespace");
         const resources = application.getSortedResources();
         // Assert
-        console.log(JSON.stringify(resources, null, 2));
-
         assert.strictEqual(resources.length, 2);
         assert.strictEqual(resources[0], resource2);
         assert.strictEqual(resources[1], resource);

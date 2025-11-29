@@ -104,6 +104,9 @@ export function addTopLevelClassConstructor(
     groupVersionKind: GroupVersionKind,
     interfaceDeclaration: InterfaceDeclaration)
 {
+
+    const isExtended = modelClass.getExtends() !== undefined;
+
     modelClass.addConstructor({
         parameters: [
             {
@@ -114,16 +117,17 @@ export function addTopLevelClassConstructor(
         ],
         statements: [
             `super('${groupVersionToString(groupVersionKind)}', '${groupVersionKind.kind}', properties.metadata);`,
-            ...interfaceDeclaration.getProperties().map(p => {
+            interfaceDeclaration.getProperties().map(p => {
                 const name = p.getName();
                 // Metadata is inherited from APIResource or NamespacedAPIResource and passed in via constructor
-                if (!comparePropertyName(name, 'metadata')) {
-                    return propertyAssigmentWithExistenceCheck(groupVersionKind.kind, name, !p.hasQuestionToken());
+                if (comparePropertyName(name, 'metadata') && isExtended) {
+                    return undefined;
                 } else {
-                    return [];
+                    return propertyAssigmentWithExistenceCheck(groupVersionKind.kind, name, !p.hasQuestionToken());
                 }
             })
-            .flat()
+            .filter(statement => statement !== undefined)
+            .join('\n'),
         ],
     });
 }
@@ -138,6 +142,8 @@ export function addPropertiesClassConstructor(
         return;
     }
 
+    const isExtended = modelClass.getExtends() !== undefined;
+
     modelClass.addConstructor({
         parameters: [
             {
@@ -150,10 +156,10 @@ export function addPropertiesClassConstructor(
             interfaceDeclaration.getProperties().map(p => {
                 const name = p.getName();
                 // Metadata is inherited from APIResource or NamespacedAPIResource and passed in via constructor
-                if (!comparePropertyName(name, 'metadata')) {
-                    return propertyAssigmentWithExistenceCheck(className, name, !p.hasQuestionToken());
-                } else {
+                if (comparePropertyName(name, 'metadata') && isExtended) {
                     return undefined;
+                } else {
+                    return propertyAssigmentWithExistenceCheck(className, name, !p.hasQuestionToken());
                 }
             })
             .filter(statement => statement !== undefined)
@@ -210,20 +216,27 @@ export function addToJSONMethod(
     modelClass: ClassDeclaration,
     interfaceDeclaration: InterfaceDeclaration,
 ) {
+
+    const isExtended = modelClass.getExtends() !== undefined;
+
     modelClass.addMethod({
         name: 'toJSON',
         isStatic: false,
         returnType: 'any',
         statements: [
             `return {`,
+            isExtended ? `...super.toJSON(),` : '',
             interfaceDeclaration.getProperties().map(p => {
                 const name = p.getName();
-                if (!comparePropertyName(name, 'metadata')) {
-                    if (name.includes(`'`)) {
-                        return `  ${name}: this[${name}],`;
-                    } else {
-                        return `  ${name}: this.${name},`;
-                    }
+                // Skip metadata property if the class is extended
+                if (comparePropertyName(name, 'metadata') && isExtended) {
+                    return undefined;
+                }
+
+                if (name.includes(`'`)) {
+                    return `  ${name}: this[${name}],`;
+                } else {
+                    return `  ${name}: this.${name},`;
                 }
             })
             .filter(statement => statement)
@@ -380,49 +393,54 @@ export function createGetterAndSetterForProperty(
     interfaceDeclaration: InterfaceDeclaration,
     apiTypes: Set<string>,
 ) {
+
+    const isExtended = modelClass.getExtends() !== undefined;
+
     interfaceDeclaration.getProperties().forEach(p => {
         const name = p.getName();
-        if (!comparePropertyName(name, 'metadata')) {
-
-            const classProperty = modelClass.getProperty((p) => comparePropertyName(p.getName(), name));
-            if (!classProperty) {
-                console.error(`Failed to find property: ${name} in class: ${modelClass.getName()}`);
-                return;
-            }
-
-            classProperty.rename(`_${name}`);
-
-            const typeName = cleanTypeNameFromImport(classProperty.getType().getText());
-            const { isArrayType, isStringMap, cleanTypeName } = extractCleanTypeName(typeName);
-            const isAPIType = apiTypes.has(cleanTypeName);
-            const type = reconstructParameterTypeName(isArrayType, isStringMap, isAPIType, p.hasQuestionToken(), cleanTypeName);
-            const returnType = reconstructReturnTypeName(isArrayType, isStringMap, cleanTypeName, p.hasQuestionToken());
-
-            modelClass.addGetAccessor({
-                name: name,
-                isStatic: false,
-                returnType: returnType,
-                statements: [
-                    `return this._${name};`
-                ]
-            });
-
-            modelClass.addSetAccessor({
-                name: name,
-                isStatic: false,
-                parameters: [
-                    {
-                        name: 'value',
-                        type: type,
-                    }
-                ],
-                statements: [
-                    isAPIType 
-                        ? createAPITypeSetterMethod(name, cleanTypeName, isArrayType, isStringMap, p.hasQuestionToken())
-                        : createStandardTypeSetterMethod(name)
-                ]
-            });
+        if (comparePropertyName(name, 'metadata') && isExtended) {
+            return;
         }
+
+        const classProperty = modelClass.getProperty((p) => comparePropertyName(p.getName(), name));
+        if (!classProperty) {
+            console.error(`Failed to find property: ${name} in class: ${modelClass.getName()}`);
+            return;
+        }
+
+        classProperty.rename(`_${name}`);
+
+        const typeName = cleanTypeNameFromImport(classProperty.getType().getText());
+        const { isArrayType, isStringMap, cleanTypeName } = extractCleanTypeName(typeName);
+        const isAPIType = apiTypes.has(cleanTypeName);
+        const type = reconstructParameterTypeName(isArrayType, isStringMap, isAPIType, p.hasQuestionToken(), cleanTypeName);
+        const returnType = reconstructReturnTypeName(isArrayType, isStringMap, cleanTypeName, p.hasQuestionToken());
+
+        modelClass.addGetAccessor({
+            name: name,
+            isStatic: false,
+            returnType: returnType,
+            statements: [
+                `return this._${name};`
+            ]
+        });
+
+        modelClass.addSetAccessor({
+            name: name,
+            isStatic: false,
+            parameters: [
+                {
+                    name: 'value',
+                    type: type,
+                }
+            ],
+            statements: [
+                isAPIType 
+                    ? createAPITypeSetterMethod(name, cleanTypeName, isArrayType, isStringMap, p.hasQuestionToken())
+                    : createStandardTypeSetterMethod(name)
+            ]
+        });
+        
     });
 }
 
