@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/kubeframe/kubeframe/compare/v2.0.0...v2.0.1) (2025-11-29)
+
+
+### Bug Fixes
+
+* Fix different areas and improve values sample ([7300133](https://github.com/kubeframe/kubeframe/commit/7300133fe6b0b62afe052d107319a8467e35d5fb))
+
 ## [2.0.0](https://github.com/kubeframe/kubeframe/compare/v1.0.3...v2.0.0) (2025-11-28)
 
 
