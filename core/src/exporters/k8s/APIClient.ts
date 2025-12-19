@@ -1,5 +1,5 @@
 import * as k8sClient from '@kubernetes/client-node';
-import { APIObject, APIResource, APIResourceFactory } from '../../index.js';
+import { APIObject, APIResource, APIResourceFactory, k8s } from '../../index.js';
 
 type APIObjectHeader<T extends APIObject> = Pick<T, 'apiVersion' | 'kind'> & {
     metadata: {
@@ -12,7 +12,7 @@ export interface APIClient {
     create(resource: APIObject): Promise<APIResource>;
     patch(resource: APIObject): Promise<APIObject>;
     read(resource: APIObjectHeader<APIObject>): Promise<APIObject>;
-    delete(resource: APIObject): Promise<k8sClient.V1Status>;
+    delete(resource: APIObject): Promise<k8s.meta.v1.Status>;
     list(apiVersion: string, kind: string, namespace: string | undefined, labelSelector: string): Promise<APIResource>;
 }
 
@@ -43,9 +43,9 @@ export class KubernetesAPIClient implements APIClient {
         return APIResourceFactory.createFromPlainJSON(rawResponse) as APIObject;
     }
 
-    async delete(resource: APIObject): Promise<APIResource> {
+    async delete(resource: APIObject): Promise<k8s.meta.v1.Status> {
         const rawResponse = await this.apiClient.delete(resource);
-        return APIResourceFactory.createFromPlainJSON(rawResponse) as APIResource;
+        return APIResourceFactory.createFromPlainJSON(rawResponse) as k8s.meta.v1.Status;
     }
 
     async list(apiVersion: string, kind: string, namespace: string | undefined, labelSelector: string): Promise<APIResource> {

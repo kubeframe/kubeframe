@@ -1,5 +1,6 @@
 import * as path from "path";
-import { APIObject, isNamespacedAPIObject } from "../../base/APIResource.js";
+import { APIObject } from "../../base/APIObject.js";
+import { isNamespacedAPIObject } from "../../base/NamespacedAPIObject.js";
 import { mkdirSync, statSync, writeFileSync } from "fs";
 import * as YAML from "yaml";
 import { resourceToYaml } from "../../YAML.js";

@@ -105,7 +105,7 @@ export function addTopLevelClassConstructor(
     interfaceDeclaration: InterfaceDeclaration)
 {
 
-    const isExtended = modelClass.getExtends() !== undefined;
+    const isExtended = modelClass.getExtends() !== undefined && modelClass.getExtends()?.getText() !== 'KubernetesType';
 
     modelClass.addConstructor({
         parameters: [
@@ -142,7 +142,7 @@ export function addPropertiesClassConstructor(
         return;
     }
 
-    const isExtended = modelClass.getExtends() !== undefined;
+    const isExtended = modelClass.getExtends() !== undefined && modelClass.getExtends()?.getText() !== 'KubernetesType';
 
     modelClass.addConstructor({
         parameters: [
@@ -153,6 +153,7 @@ export function addPropertiesClassConstructor(
             }
         ],
         statements: [
+            'super();',
             interfaceDeclaration.getProperties().map(p => {
                 const name = p.getName();
                 // Metadata is inherited from APIResource or NamespacedAPIResource and passed in via constructor
@@ -217,7 +218,7 @@ export function addToJSONMethod(
     interfaceDeclaration: InterfaceDeclaration,
 ) {
 
-    const isExtended = modelClass.getExtends() !== undefined;
+    const isExtended = modelClass.getExtends() !== undefined && modelClass.getExtends()?.getText() !== 'KubernetesType';
 
     modelClass.addMethod({
         name: 'toJSON',
@@ -394,7 +395,7 @@ export function createGetterAndSetterForProperty(
     apiTypes: Set<string>,
 ) {
 
-    const isExtended = modelClass.getExtends() !== undefined;
+    const isExtended = modelClass.getExtends() !== undefined && modelClass.getExtends()?.getText() !== 'KubernetesType';
 
     interfaceDeclaration.getProperties().forEach(p => {
         const name = p.getName();
@@ -458,32 +459,50 @@ export function createAPITypeSetterMethod(
     isOptional: boolean,
 ): string {
 
-    const optionalCheck = dedentString(`
-        if (!value) {
-            this._${name} = undefined;
-            return;
-        }`,
-    4);
-
     let result = undefined
     if (isStringMap) {
         if (isArrayType) {
             result = [
-                isOptional ? optionalCheck : undefined,
+                isOptional ?
+                dedentString(`
+                    if (!value) {
+                        if (this._${name}) {
+                            for (const items of Object.values(this._${name})) {
+                                for (const item of items) {
+                                    this.removeChild(item);
+                                }
+                            }
+                        }
+                        this._${name} = undefined;
+                        return;
+                    }`,
+                4) : undefined,
                 dedentString(`
                     const result: { [key: string]: ${cleanTypeName}[] } = {};
                     for (const [key, item] of Object.entries(value)) {
                         if (item instanceof ${cleanTypeName}) {
                             if (result[key]) {
                                 result[key].push(item);
+                                this.addChild(item);
                             } else {
                                 result[key] = [item];
+                                this.addChild(item);
                             }
                         } else {
                             if (result[key]) {
-                                result[key].push(new ${cleanTypeName}(item));
+                                const newItem = new ${cleanTypeName}(item);
+                                result[key].push(newItem);
+                                this.addChild(newItem);
                             } else {
                                 result[key] = [new ${cleanTypeName}(item)];
+                                this.addChild(newItem);
+                            }
+                        }
+                    }
+                    if (this._${name}) {
+                        for (const items of Object.values(this._${name})) {
+                            for (const item of items) {
+                                this.removeChild(item);
                             }
                         }
                     }
@@ -492,14 +511,33 @@ export function createAPITypeSetterMethod(
             ]
         } else {
             result = [
-                isOptional ? optionalCheck : undefined,
+                isOptional ?
+                dedentString(`
+                    if (!value) {
+                        if (this._${name}) {
+                            for (const item of this._${name}) {
+                                this.removeChild(item);
+                            }
+                        }
+                        this._${name} = undefined;
+                        return;
+                    }`,
+                4) : undefined,
                 dedentString(`
                     const result: { [key: string]: ${cleanTypeName} } = {};
                     for (const [key, item] of Object.entries(value)) {
                         if (item instanceof ${cleanTypeName}) {
                             result[key] = item;
+                            this.addChild(item);
                         } else {
-                            result[key] = new ${cleanTypeName}(item);
+                            const newItem = new ${cleanTypeName}(item);
+                            result[key] = newItem;
+                            this.addChild(newItem);
+                        }
+                    }
+                    if (this._${name}) {
+                        for (const item of this._${name}) {
+                            this.removeChild(item);
                         }
                     }
                     this._${name} = result;`,
@@ -508,14 +546,33 @@ export function createAPITypeSetterMethod(
         }
     } else if (isArrayType) {
         result = [
-            isOptional ? optionalCheck : undefined,
+            isOptional ?
+            dedentString(`
+                if (!value) {
+                    if (this._${name}) {
+                        for (const item of this._${name}) {
+                            this.removeChild(item);
+                        }
+                    }
+                    this._${name} = undefined;
+                    return;
+                }`,
+            4) : undefined,
             dedentString(`
                 const result: ${cleanTypeName}[] = [];
                 for (const item of value) {
                     if (item instanceof ${cleanTypeName}) {
                         result.push(item);
+                        this.addChild(item);
                     } else {
-                        result.push(new ${cleanTypeName}(item));
+                        const newItem = new ${cleanTypeName}(item);
+                        result.push(newItem);
+                        this.addChild(newItem);
+                    }
+                }
+                if (this._${name}) {
+                    for (const item of this._${name}) {
+                        this.removeChild(item);
                     }
                 }
                 this._${name} = result;`,
@@ -523,12 +580,27 @@ export function createAPITypeSetterMethod(
         ];
     } else {
         result = [
-            isOptional ? optionalCheck : undefined,
+            isOptional ?
             dedentString(`
+                if (!value) {
+                    if (this._${name}) {
+                        this.removeChild(this._${name});
+                    }
+                    this._${name} = undefined;
+                    return;
+                }`,
+            4) : undefined,
+            dedentString(`
+                const current = this._${name};
                 if (value instanceof ${cleanTypeName}) {
                     this._${name} = value;
+                    this.addChild(value);
                 } else {
                     this._${name} = new ${cleanTypeName}(value);
+                    this.addChild(this._${name});
+                }
+                if (current) {
+                    this.removeChild(current);
                 }`, 
             4),
         ];

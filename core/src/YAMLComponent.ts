@@ -2,7 +2,7 @@ import { readFileSync } from "fs";
 import * as YAML from 'yaml';
 import { APIResourceFactory } from "./base/APIResourceFactory.js";
 import { Component } from "./Component.js";
-import { APIObject } from "./base/APIResource.js";
+import { APIObject } from "./base/APIObject.js";
 
 export class YAMLComponent extends Component {
 

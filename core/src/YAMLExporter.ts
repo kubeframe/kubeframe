@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 import { resourceToYaml } from "./YAML.js";
 import { Application, ResourceFilter } from "./Application.js";
-import { APIObject } from "./base/APIResource.js";
+import { APIObject } from "./base/APIObject.js";
 
 export class YAMLExporter {
     

@@ -468,7 +468,7 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
                 }
 
                 sourceFile.addImportDeclaration({
-                    moduleSpecifier: '../../../base/APIResource.js',
+                    moduleSpecifier: `../../../base/${metadataBaseType}.js`,
                     namedImports: [ metadataBaseType ],
                 });
                 modelClass.setExtends(metadataBaseType);
@@ -478,6 +478,14 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
                     className: groupVersionKind.kind,
                     path: path.join(group, version, groupVersionKind.kind),
                 });
+            } else {
+
+                sourceFile.addImportDeclaration({
+                    moduleSpecifier: '../../../base/KubernetesType.js',
+                    namedImports: [ 'KubernetesType' ],
+                });
+
+                modelClass.setExtends('KubernetesType');
             }
 
             // Fix property types by clearing any unwanted imports
@@ -513,6 +521,13 @@ export function postProcessSourceFile(sourceFile: SourceFile, state: GenerationS
             }
 
         } else {
+
+            sourceFile.addImportDeclaration({
+                moduleSpecifier: '../../../base/KubernetesType.js',
+                namedImports: [ 'KubernetesType' ],
+            });
+
+            modelClass.setExtends('KubernetesType');
 
             // Fix property types by clearing any unwanted imports
             // This can happen when renaming some types

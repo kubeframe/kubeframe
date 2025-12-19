@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import { APIResourceFactory } from "./base/APIResourceFactory.js";
 import * as YAML from 'yaml';
 import { Component } from "./Component.js";
-import { APIObject } from "./base/APIResource.js";
+import { APIObject } from "./base/APIObject.js";
 
 export interface HelmOptions {
     releaseName: string;

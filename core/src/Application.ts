@@ -1,4 +1,5 @@
-import { APIObject, APIResource, DependencyKey } from "./base/APIResource.js";
+import { APIObject } from "./base/APIObject.js";
+import { DependencyKey } from "./base/Types.js";
 import { Component } from "./Component.js";
 import { getLogger } from "./Logger.js";
 
@@ -20,7 +21,7 @@ export abstract class Application {
 
     constructor(name: string) {
         this.name = name;
-        this.addCommonLabel(APPLICATION_NAME_LABEL, name);
+        this.setCommonLabel(APPLICATION_NAME_LABEL, name);
     }
 
     abstract build(): Promise<void>;
@@ -90,18 +91,29 @@ export abstract class Application {
         return this.components.get(name);
     }
 
+    /**
+     * Set the namespace for all namespaced resources in all components.
+     * If the resource already has a namespace, it will not be changed.
+     * @param namespace The namespace to set.
+     */
     setNamespace(namespace: string) {
         this.components.forEach(component => {
             component.setNamespace(namespace);
         });
     }
 
-    addCommonLabel(key: string, value: string) {
+    setCommonLabel(key: string, value: string) {
         this.commonLabels.set(key, value);
+        this.components.forEach(component => {
+            component.setCommonLabel(key, value);
+        });
     }
 
-    addCommonAnnotation(key: string, value: string) {
+    setCommonAnnotation(key: string, value: string) {
         this.commonAnnotations.set(key, value);
+        this.components.forEach(component => {
+            component.setCommonAnnotation(key, value);
+        });
     }
 
     getCommonLabels(): Map<string, string> {
@@ -114,17 +126,29 @@ export abstract class Application {
 
     removeCommonLabel(key: string) {
         this.commonLabels.delete(key);
+        this.components.forEach(component => {
+            component.removeCommonLabel(key);
+        });
     }
     
     removeCommonAnnotation(key: string) {
         this.commonAnnotations.delete(key);
+        this.components.forEach(component => {
+            component.removeCommonAnnotation(key);
+        });
     }
 
     clearCommonLabels() {
+        for (const key of this.commonLabels.keys()) {
+            this.removeCommonLabel(key);
+        }
         this.commonLabels.clear();
     }
     
     clearCommonAnnotations() {
+        for (const key of this.commonAnnotations.keys()) {
+            this.removeCommonAnnotation(key);
+        }
         this.commonAnnotations.clear();
     }
 

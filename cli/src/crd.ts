@@ -68,6 +68,8 @@ export async function generateFromConfigFile(file: string, output: string, kuber
         for (const crd of config.crds) {
             if (crd.startsWith('http://') || crd.startsWith('https://')) {
                 await generateFromUrl(crd, output, kubernetesVersion);
+            } else if (crd.startsWith('cluster://')) {
+                await generateFromCluster(crd, output, kubernetesVersion);
             } else {
                 await generateFromFile(crd, output, kubernetesVersion);
             }
@@ -77,7 +79,11 @@ export async function generateFromConfigFile(file: string, output: string, kuber
     }
 }
 
-export async function generateFromCluster(output: string) {
+export async function generateFromCluster(crd: string, output: string, kubernetesVersion: string) {
+
+    // crd is formatted as cluster://group/version/kind where kind can be * or a specific kind
+    const [group, version, kind] = crd.split('cluster://')[1].split('/');
+    
     
 }
 

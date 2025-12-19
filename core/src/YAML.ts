@@ -1,4 +1,4 @@
-import { APIObject } from "./base/APIResource.js";
+import { APIObject } from "./base/APIObject.js";
 import * as YAML from 'yaml';
 
 export function resourceToYaml(resource: APIObject): string {

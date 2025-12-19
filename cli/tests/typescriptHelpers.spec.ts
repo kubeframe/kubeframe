@@ -1,6 +1,15 @@
 import { Project } from "ts-morph";
 import { describe, it } from "mocha";
-import { addTopLevelClassConstructor, cleanTypeNameFromImport, createAPITypeSetterMethod, dedentString, extractCleanTypeName, reconstructParameterTypeName, reconstructReturnTypeName, reconstructTypeName, removeImportFromTypeName } from "../src/typescriptHelpers.js";
+import {
+    addTopLevelClassConstructor,
+    cleanTypeNameFromImport,
+    createAPITypeSetterMethod,
+    dedentString,
+    extractCleanTypeName,
+    reconstructParameterTypeName,
+    reconstructReturnTypeName,
+    reconstructTypeName,
+} from "../src/typescriptHelpers.js";
 import { GroupVersionKind } from "../src/kubernetes.js";
 import assert from "node:assert";
 
@@ -51,7 +60,7 @@ describe("typescriptHelpers", () => {
     });
 
     it("removeImportFromTypeName", () => {
-        const typeName = "{ [key: string]: import(\"/home/tiith/Projects/experiment/kubeframe/cli/apiextensions/v1/JSONSchemaProps\").JSONSchemaProps; };";
+        const typeName = "{ [key: string]: import(\"/home/dir/kubeframe/cli/apiextensions/v1/JSONSchemaProps\").JSONSchemaProps; };";
         const cleanTypeName = cleanTypeNameFromImport(typeName);
         assert.strictEqual(cleanTypeName, "{ [key: string]: JSONSchemaProps; };");
     });
@@ -188,7 +197,18 @@ describe("typescriptHelpers", () => {
         const isStringMap = false;
         const isOptional = false;
         const code = createAPITypeSetterMethod(name, cleanTypeName, isArrayType, isStringMap, isOptional);
-        assert.strictEqual(code, `\nif (value instanceof ${cleanTypeName}) {\n    this._${name} = value;\n} else {\n    this._${name} = new ${cleanTypeName}(value);\n}`);
+        assert.strictEqual(code, dedentString(`
+        const current = this._${name};
+        if (value instanceof ${cleanTypeName}) {
+            this._${name} = value;
+            this.addChild(value);
+        } else {
+            this._${name} = new ${cleanTypeName}(value);
+            this.addChild(this._${name});
+        }
+        if (current) {
+            this.removeChild(current);
+        }`, 4));
     });
 
     it("expect createAPITypeSetterMethod to return the correct code for APIType[]", () => {
@@ -198,7 +218,25 @@ describe("typescriptHelpers", () => {
         const isStringMap = false;
         const isOptional = false;
         const code = createAPITypeSetterMethod(name, cleanTypeName, isArrayType, isStringMap, isOptional);
-        assert.strictEqual(code, `\nconst result: ${cleanTypeName}[] = [];\nfor (const item of value) {\n    if (item instanceof ${cleanTypeName}) {\n        result.push(item);\n    } else {\n        result.push(new ${cleanTypeName}(item));\n    }\n}\nthis._${name} = result;`);
+        assert.strictEqual(code, dedentString(`
+        const result: ${cleanTypeName}[] = [];
+        for (const item of value) {
+            if (item instanceof ${cleanTypeName}) {
+                result.push(item);
+                this.addChild(item);
+            } else {
+                const newItem = new ${cleanTypeName}(item);
+                result.push(newItem);
+                this.addChild(newItem);
+            }
+        }
+        if (this._${name}) {
+            for (const item of this._${name}) {
+                this.removeChild(item);
+            }
+        }
+        this._${name} = result;`,
+        4));
     });
 
     it("expect createAPITypeSetterMethod to return the correct code for { [key: string]: APIType }", () => {
@@ -208,6 +246,24 @@ describe("typescriptHelpers", () => {
         const isStringMap = true;
         const isOptional = false;
         const code = createAPITypeSetterMethod(name, cleanTypeName, isArrayType, isStringMap, isOptional);
-        assert.strictEqual(code, `\nconst result: { [key: string]: ${cleanTypeName} } = {};\nfor (const [key, item] of Object.entries(value)) {\n    if (item instanceof ${cleanTypeName}) {\n        result[key] = item;\n    } else {\n        result[key] = new ${cleanTypeName}(item);\n    }\n}\nthis._${name} = result;`);
+        assert.strictEqual(code, dedentString(`
+        const result: { [key: string]: ${cleanTypeName} } = {};
+        for (const [key, item] of Object.entries(value)) {
+            if (item instanceof ${cleanTypeName}) {
+                result[key] = item;
+                this.addChild(item);
+            } else {
+                const newItem = new ${cleanTypeName}(item);
+                result[key] = newItem;
+                this.addChild(newItem);
+            }
+        }
+        if (this._${name}) {
+            for (const item of this._${name}) {
+                this.removeChild(item);
+            }
+        }
+        this._${name} = result;`,
+        4));
     });
 });

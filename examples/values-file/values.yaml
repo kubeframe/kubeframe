@@ -7,7 +7,7 @@ deployments:
         image: k8s.gcr.io/e2e-test-images/echoserver:2.5
         resources:
           limits:
-            cpu: 100m
+            cpu: 120m
             memory: 128Mi
           requests:
             cpu: 10m
@@ -21,3 +21,4 @@ configMaps:
       key1: value1
       key2: value2
       key3: value3
+      key4: value4

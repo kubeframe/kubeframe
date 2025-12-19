@@ -1,28 +1,31 @@
 import * as k8sClient from '@kubernetes/client-node';
-import { APIObject } from '../../base/APIResource.js';
+import { APIObject } from '../../base/APIObject.js';
 import { getLogger } from '../../Logger.js';
 
 import { 
-    KubernetesLifecycleEvent,
-    KubernetesLifecycleEventPayload,
-    PostCreateEventPayload,
-    PostDeleteEventPayload,
-    PostPatchEventPayload,
-    PostWaitEventPayload,
-    PreCreateEventPayload,
-    PreDeleteEventPayload,
-    PrePatchEventPayload,
-    PreWaitEventPayload,
-    ReleaseExpiredEventPayload,
+    KubernetesExportHook,
+    KubernetesExportHookPayload,
+    PostCreateHookPayload,
+    PostDeleteHookPayload,
+    PostParseStateHookPayload,
+    PostPatchHookPayload,
+    PostWaitHookPayload,
+    PreCreateHookPayload,
+    PreDeleteHookPayload,
+    PreParseStateHookPayload,
+    PrePatchHookPayload,
+    PreWaitHookPayload,
+    ReleaseExpiredHookPayload,
     WaitResult,
-} from './KubernetesLifecycleEvent.js';
+} from './KubernetesExportHook.js';
 import { APIResourceFactory, Application, k8s, ResourceWaiter } from '../../index.js';
 import * as jsonmergepatch from 'json-merge-patch';
 import { WAITERS } from './waiters/index.js';
 import { APIClient, KubernetesAPIClient } from './APIClient.js';
 import { Compress } from '../../util/Compress.js';
+import { ReleaseState } from './ReleaseState.js';
 
-export type EventListenerFunction = (eventData: KubernetesLifecycleEventPayload) => Promise<void>;
+export type ExportHookFunction = (hookPayload: KubernetesExportHookPayload) => Promise<void>;
 
 export interface KubernetesExportOptions {
     releaseName: string;
@@ -33,16 +36,9 @@ export interface KubernetesExportOptions {
     waitTimeoutSeconds?: number;
     waitIntervalSeconds?: number;
     resourceWaitTimeouts?: Map<string, number>;
-    eventListeners?: Map<string, EventListenerFunction[]>;
+    hooks?: Map<string, ExportHookFunction[]>;
     releaseMetadata?: Record<string, string>;
     apiClient?: APIClient;
-}
-
-interface State {
-    name: string;
-    resources: APIObject[];
-    metadata: Record<string, string>;
-    configMap: k8s.core.v1.ConfigMap;
 }
 
 interface ResourceSyncResult {
@@ -58,18 +54,18 @@ const DEFAULT_EXPORT_OPTIONS: Partial<KubernetesExportOptions> = {
     waitIntervalSeconds: 10,
     numberOfReleasesToKeep: 5,
     resourceWaitTimeouts: new Map<string, number>(),
-    eventListeners: new Map<string, EventListenerFunction[]>(),
+    hooks: new Map<string, ExportHookFunction[]>(),
     releaseMetadata: {},
 };
 
-const MANAGED_BY_LABEL = 'app.kubernetes.io/managed-by';
-const RELEASE_NAME_LABEL = 'app.kubeframe/release-name';
-const RELEASE_STATE_LABEL = 'app.kubeframe/release-state';
-const RELEASE_COMPRESSED_ANNOTATION = 'app.kubeframe/release-state-compressed';
-const STATE_KEY = 'kubeframe-state';
+export const MANAGED_BY_LABEL = 'app.kubernetes.io/managed-by';
+export const RELEASE_NAME_LABEL = 'app.kubeframe/release-name';
+export const RELEASE_STATE_LABEL = 'app.kubeframe/release-state';
+export const RELEASE_COMPRESSED_ANNOTATION = 'app.kubeframe/release-state-compressed';
+export const STATE_KEY = 'kubeframe-state';
 
-const MANAGED_BY = 'kubeframe';
-const FIELD_MANAGER = 'kubeframe';
+export const MANAGED_BY = 'kubeframe';
+export const FIELD_MANAGER = 'kubeframe';
 
 const SECONDS_IN_MILLIS = 1000;
 
@@ -79,7 +75,7 @@ export class KubernetesExporter {
     private apiClient: APIClient;
     private options: KubernetesExportOptions;
     private waiterTypes: Map<string, ResourceWaiter> = new Map();
-    private eventListeners: Map<string, EventListenerFunction[]> = new Map();
+    private hooks: Map<string, ExportHookFunction[]> = new Map();
 
     constructor(options: KubernetesExportOptions) {
         this.options = { ...DEFAULT_EXPORT_OPTIONS, ...options };
@@ -94,20 +90,20 @@ export class KubernetesExporter {
         this.logger.debug(`Registering waiter for resource type: ${waiter.getResourceType()}`);
         this.waiterTypes.set(waiter.getResourceType(), waiter);
     }
-
-    addEventListener(eventType: string, listener: EventListenerFunction) {
-        const listeners = this.eventListeners.get(eventType) || [];
-        listeners.push(listener);
-        this.eventListeners.set(eventType, listeners);
+    
+    addExportHook(eventType: string, listener: ExportHookFunction) {
+        const hooks = this.hooks.get(eventType) || [];
+        hooks.push(listener);
+        this.hooks.set(eventType, hooks);
     }
 
-    async notifyEventListeners(
+    async notifyExportHooks(
         eventType: string, 
-        eventData: KubernetesLifecycleEventPayload,
+        eventData: KubernetesExportHookPayload,
     ): Promise<void> {
-        const listeners = this.eventListeners.get(eventType) || [];
-        for (const listener of listeners) {
-            await listener(eventData);
+        const hooks = this.hooks.get(eventType) || [];
+        for (const hook of hooks) {
+            await hook(eventData);
         }
     }
 
@@ -318,7 +314,7 @@ export class KubernetesExporter {
         await this.cleanupReleases(0);
     }
 
-    async releases(): Promise<State[]> {
+    async releases(): Promise<ReleaseState[]> {
 
         const labelSelector = this.createLabelSelector({
             [MANAGED_BY_LABEL]: MANAGED_BY, 
@@ -347,7 +343,7 @@ export class KubernetesExporter {
 
         configMaps.items.sort(sortByCreationTimestamp);
 
-        const releases: State[] = [];
+        const releases: ReleaseState[] = [];
         for (const configMap of configMaps.items) {
             const release = await this.parseReleaseState(configMap);
             releases.push(release);
@@ -431,7 +427,7 @@ export class KubernetesExporter {
         await this.cleanupReleases(this.options.numberOfReleasesToKeep);
     }
 
-    private async getState(offset: number = 0): Promise<State | undefined> {
+    private async getState(offset: number = 0): Promise<ReleaseState | undefined> {
 
         const labelSelector = this.createLabelSelector({
             [MANAGED_BY_LABEL]: MANAGED_BY, 
@@ -473,7 +469,12 @@ export class KubernetesExporter {
         return this.parseReleaseState(configMap);
     }
 
-    private async parseReleaseState(configMap: k8s.core.v1.ConfigMap): Promise<State> {
+    private async parseReleaseState(configMap: k8s.core.v1.ConfigMap): Promise<ReleaseState> {
+
+        await this.notifyExportHooks(
+            KubernetesExportHook.PRE_PARSE_STATE,
+            new PreParseStateHookPayload(configMap),
+        );
 
         const stateData = configMap.data ? configMap.data[STATE_KEY] : null;
         if (!stateData) {
@@ -501,12 +502,19 @@ export class KubernetesExporter {
             metadata[key] = configMap.data[key];
         }
 
-        return {
-            name: configMap.metadata?.name,
+        const state = new ReleaseState(
+            configMap.metadata?.name,
             resources,
             metadata,
             configMap,
-        };
+        );
+
+        await this.notifyExportHooks(
+            KubernetesExportHook.POST_PARSE_STATE,
+            new PostParseStateHookPayload(state),
+        );
+
+        return state;
     }
 
     private async cleanupReleases(keep: number) {
@@ -564,13 +572,10 @@ export class KubernetesExporter {
 
             const releaseState = await this.parseReleaseState(configMap);
 
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.RELEASE_EXPIRED,
-                new ReleaseExpiredEventPayload(
-                    this.options.releaseName, 
-                    releaseState.resources,
-                    releaseState.metadata,
-                    configMap,
+            await this.notifyExportHooks(
+                KubernetesExportHook.RELEASE_EXPIRED,
+                new ReleaseExpiredHookPayload(
+                    releaseState,
                 ),
             );
         } catch (error) {
@@ -624,13 +629,14 @@ export class KubernetesExporter {
         const fullName = resource.getIdentifier();
 
         try {
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.PRE_CREATE, 
-                new PreCreateEventPayload(resource),
-            );
 
             resource.setLabel(MANAGED_BY_LABEL, MANAGED_BY);
             resource.setLabel(RELEASE_NAME_LABEL, this.options.releaseName);
+
+            await this.notifyExportHooks(
+                KubernetesExportHook.PRE_CREATE, 
+                new PreCreateHookPayload(resource),
+            );
 
             this.logger.debug({ resource: resource.toJSON() }, `Creating resource ${fullName}`);
 
@@ -638,9 +644,9 @@ export class KubernetesExporter {
                 resource.toJSON(),
             );
 
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.POST_CREATE, 
-                new PostCreateEventPayload(resource, created),
+            await this.notifyExportHooks(
+                KubernetesExportHook.POST_CREATE, 
+                new PostCreateHookPayload(resource, created),
             );
 
             this.logger.info(`Created resource: ${fullName}`);
@@ -682,9 +688,9 @@ export class KubernetesExporter {
             patch.kind = resource.kind;
             patch.metadata = resource.metadata;
 
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.PRE_PATCH, 
-                new PrePatchEventPayload(
+            await this.notifyExportHooks(
+                KubernetesExportHook.PRE_PATCH, 
+                new PrePatchHookPayload(
                     resource, 
                     existingResource, 
                     patch,
@@ -699,9 +705,9 @@ export class KubernetesExporter {
 
             this.logger.debug({ patched: patched }, `Patched resource ${fullName}`);
 
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.POST_PATCH, 
-                new PostPatchEventPayload(resource, patched),
+            await this.notifyExportHooks(
+                KubernetesExportHook.POST_PATCH, 
+                new PostPatchHookPayload(resource, patched),
             );
 
             this.logger.info(`Patched resource: ${fullName}`);
@@ -723,17 +729,16 @@ export class KubernetesExporter {
         const fullName = resource.getIdentifier();
 
         try {
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.PRE_DELETE, 
-                new PreDeleteEventPayload(resource),
+            await this.notifyExportHooks(
+                KubernetesExportHook.PRE_DELETE, 
+                new PreDeleteHookPayload(resource),
             );
             
             const deleted = await this.apiClient.delete(resource.toJSON());
 
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.POST_DELETE,
-                // @ts-ignore
-                new PostDeleteEventPayload(resource, deleted),
+            await this.notifyExportHooks(
+                KubernetesExportHook.POST_DELETE,
+                new PostDeleteHookPayload(resource, deleted),
             );
 
             this.logger.info(`Deleted resource: ${fullName}`);
@@ -746,18 +751,18 @@ export class KubernetesExporter {
 
     private async waitForResourceReady(resource: APIObject) {
 
-        await this.notifyEventListeners(
-            KubernetesLifecycleEvent.PRE_WAIT, 
-            new PreWaitEventPayload(resource),
+        await this.notifyExportHooks(
+            KubernetesExportHook.PRE_WAIT, 
+            new PreWaitHookPayload(resource),
         );
 
         const waiter = this.waiterTypes.get(resource.getFullResourceType());
 
         if (!waiter) {
             this.logger.debug(`No waiter registered for resource type: ${resource.getFullResourceType()}. Skipping wait.`);
-            await this.notifyEventListeners(
-                KubernetesLifecycleEvent.POST_WAIT, 
-                new PostWaitEventPayload(resource, WaitResult.SKIPPED),
+            await this.notifyExportHooks(
+                KubernetesExportHook.POST_WAIT, 
+                new PostWaitHookPayload(resource, WaitResult.SKIPPED),
             );
             return;
         }
@@ -781,26 +786,26 @@ export class KubernetesExporter {
                 const isReady = await waiter.checkCondition(existingResource);
                 if (isReady) {
                     this.logger.info(`Resource is ready: ${fullResourceName}`);
-                    await this.notifyEventListeners(
-                        KubernetesLifecycleEvent.POST_WAIT, 
-                        new PostWaitEventPayload(resource, WaitResult.READY),
+                    await this.notifyExportHooks(
+                        KubernetesExportHook.POST_WAIT, 
+                        new PostWaitHookPayload(resource, WaitResult.READY),
                     );
                     return;
                 }
             } else {
                 const message = `Resource not found while waiting for readiness: ${fullResourceName}`;
                 this.logger.warn(message);
-                await this.notifyEventListeners(
-                    KubernetesLifecycleEvent.POST_WAIT, 
-                    new PostWaitEventPayload(resource, WaitResult.ERROR),
+                await this.notifyExportHooks(
+                    KubernetesExportHook.POST_WAIT, 
+                    new PostWaitHookPayload(resource, WaitResult.ERROR),
                 );
                 throw new Error(message);
             }
 
             if (Date.now() - startTime > timeoutMillis) {
-                await this.notifyEventListeners(
-                    KubernetesLifecycleEvent.POST_WAIT, 
-                    new PostWaitEventPayload(resource, WaitResult.TIMEOUT),
+                await this.notifyExportHooks(
+                    KubernetesExportHook.POST_WAIT, 
+                    new PostWaitHookPayload(resource, WaitResult.TIMEOUT),
                 );
                 throw new Error(`Timeout waiting for resource to be ready: ${fullResourceName}`);
             }

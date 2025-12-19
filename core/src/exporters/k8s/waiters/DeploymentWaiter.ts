@@ -1,6 +1,6 @@
 import { getLogger } from "../../../Logger.js";
 import { ResourceWaiter } from "./ResourceWaiter.js";
-import { APIObject } from "../../../base/APIResource.js";
+import { APIObject } from "../../../base/APIObject.js";
 import { k8s } from "../../../index.js";
 
 export class DeploymentWaiter extends ResourceWaiter {
@@ -26,7 +26,7 @@ export class DeploymentWaiter extends ResourceWaiter {
 
         if ((generation && observedGeneration) && observedGeneration >= generation) {
 
-            if (!replicas || !availableReplicas || !updatedReplicas) {
+            if (replicas === undefined || availableReplicas === undefined || updatedReplicas === undefined) {
                 this.logger.info(`Deployment ${deployment.metadata?.name} is not ready yet. Missing replica information.`);
                 return false;
             }

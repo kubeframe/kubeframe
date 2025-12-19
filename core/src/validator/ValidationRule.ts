@@ -1,4 +1,4 @@
-import { APIObject } from "../base/APIResource.js";
+import { APIObject } from "../base/APIObject.js";
 import { ValidationError } from "./ValidationError.js";
 
 export abstract class ValidationRule {

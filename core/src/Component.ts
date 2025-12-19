@@ -1,8 +1,10 @@
 import { Application, ResourceFilter } from "./Application.js";
-import { APIObject, DependencyKey, isNamespacedAPIObject } from "./base/APIResource.js";
+import { APIObject } from "./base/APIObject.js";
+import { DependencyKey } from "./base/Types.js";
+import { isNamespacedAPIObject } from "./base/NamespacedAPIObject.js";
 
-const COMPONENT_NAME_LABEL = 'app.kubernetes.io/component';
-const PART_OF_LABEL = 'app.kubernetes.io/part-of';
+export const COMPONENT_NAME_LABEL = 'app.kubernetes.io/component';
+export const PART_OF_LABEL = 'app.kubernetes.io/part-of';
 
 /**
  * Logical component of an application which can be composed of one or more resources.
@@ -21,9 +23,7 @@ export abstract class Component {
 
     constructor(name: string) {
         this.name = name;
-        this.setCommonLabels({
-            [COMPONENT_NAME_LABEL]: name,
-        });
+        this.setCommonLabel(COMPONENT_NAME_LABEL, name);
     }
 
     abstract build(): Promise<void>;
@@ -36,12 +36,14 @@ export abstract class Component {
         return Array.from(this.resources.values()).filter(filter ?? (() => true));
     }
 
+    /**
+     * Set the application for the component.
+     * @param application The application to set.
+     */
     setApplication(application: Application) {
         this.application = application;
-        this.setCommonLabels({
-            [COMPONENT_NAME_LABEL]: this.name,
-            [PART_OF_LABEL]: application.getName(),
-        });
+        this.setCommonLabel(COMPONENT_NAME_LABEL, this.name);
+        this.setCommonLabel(PART_OF_LABEL, application.getName());
 
         this.resources.forEach(resource => {
             this.resolveDependencies(resource);
@@ -52,6 +54,10 @@ export abstract class Component {
         return this.application;
     }
 
+    /**
+     * Add a resource to the component.
+     * @param resource The resource to add.
+     */
     addResource(resource: APIObject) {
 
         resource.setLabels({
@@ -80,6 +86,12 @@ export abstract class Component {
             }
         }
     }
+
+    /**
+     * Set the namespace for all namespaced resources in the component.
+     * If the resource already has a namespace, it will not be changed.
+     * @param namespace The namespace to set.
+     */
     setNamespace(namespace: string) {
 
         const allResources = this.application?.getResources() ?? [];
@@ -104,49 +116,47 @@ export abstract class Component {
         });
     }
 
-    setCommonLabels(labels: Record<string, string>) {
-        const oldLabels = { ...this.commonLabels };
-        this.commonLabels = { ...labels };
-        this.onLabelsChanged(oldLabels, this.commonLabels);
+    setCommonLabel(key: string, value: string) {
+        this.commonLabels[key] = value;
+        for (const resource of this.resources.values()) {
+            resource.setLabel(key, value);
+        }
     }
 
-    setCommonAnnotations(annotations: Record<string, string>) {
-        const oldAnnotations = { ...this.commonAnnotations };
-        this.commonAnnotations = { ...annotations };
-        this.onAnnotationsChanged(oldAnnotations, this.commonAnnotations);
+    removeCommonLabel(key: string) {
+        delete this.commonLabels[key];
+        for (const resource of this.resources.values()) {
+            resource.removeLabel(key);
+        }
     }
 
+    /**
+     * Get common labels.
+     * @returns A copy of the common labels.
+     */
     getCommonLabels(): Record<string, string> {
         return { ...this.commonLabels };
     }
 
+    /**
+     * Get common annotations.
+     * @returns A copy of the common annotations.
+     */
     getCommonAnnotations(): Record<string, string> {
         return { ...this.commonAnnotations };
     }
 
-    onLabelsChanged(oldLabels: Record<string, string>, newLabels: Record<string, string>) {
-        this.resources.forEach(resource => {
-            // Remove old labels
-            for (const key in oldLabels) {
-                resource.removeLabel(key);
-            }
-            // Add new labels
-            for (const key in newLabels) {
-                resource.setLabel(key, newLabels[key]);
-            }
-        });
+    setCommonAnnotation(key: string, value: string) {
+        this.commonAnnotations[key] = value;
+        for (const resource of this.resources.values()) {
+            resource.setAnnotation(key, value);
+        }
     }
 
-    onAnnotationsChanged(oldAnnotations: Record<string, string>, newAnnotations: Record<string, string>) {
-        this.resources.forEach(resource => {
-            // Remove old annotations
-            for (const key in oldAnnotations) {
-                resource.removeAnnotation(key);
-            }
-            // Add new annotations
-            for (const key in newAnnotations) {
-                resource.setAnnotation(key, newAnnotations[key]);
-            }
-        });
+    removeCommonAnnotation(key: string) {
+        delete this.commonAnnotations[key];
+        for (const resource of this.resources.values()) {
+            resource.removeAnnotation(key);
+        }
     }
 }

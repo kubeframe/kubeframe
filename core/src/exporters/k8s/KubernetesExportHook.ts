@@ -1,7 +1,18 @@
-import { APIObject, APIResource } from "../../base/APIResource.js";
+import { APIObject } from "../../base/APIObject.js";
+import { APIResource } from "../../base/APIResource.js";
 import { k8s } from "../../index.js";
+import { ReleaseState } from "./ReleaseState.js";
 
-export enum KubernetesLifecycleEvent {
+export enum KubernetesExportHook {
+
+    /**
+     * Fired before the state of the release is parsed.
+     */
+    PRE_PARSE_STATE = 'k8s.preParseState',
+    /**
+     * Fired after the state of the release is parsed.
+     */
+    POST_PARSE_STATE = 'k8s.postParseState',
     /**
      * Fired before a resource is created.
      */
@@ -40,48 +51,52 @@ export enum KubernetesLifecycleEvent {
     RELEASE_EXPIRED = 'k8s.releaseExpired',
 }
 
-export class PreCreateEventPayload {
+export class PreParseStateHookPayload {
+    constructor(public configMap: k8s.core.v1.ConfigMap) {}
+}
+
+export class PostParseStateHookPayload {
+    constructor(public state: ReleaseState) {}
+}
+
+export class PreCreateHookPayload {
     constructor(public resource: APIResource) {}
 }
 
-export class PostCreateEventPayload {
+export class PostCreateHookPayload {
     constructor(public resource: APIResource, public response: APIResource) {}
 }
 
-export class PrePatchEventPayload {
+export class PrePatchHookPayload {
     constructor(public resource: APIResource, public existingResource: APIObject, public patch: any) {}
 }
 
-export class PostPatchEventPayload {
+export class PostPatchHookPayload {
     constructor(public resource: APIResource, public response: APIObject) {}
 }
 
-export class PreDeleteEventPayload {
+export class PreDeleteHookPayload {
     constructor(public resource: APIResource) {}
 }
 
-export class PostDeleteEventPayload {
+export class PostDeleteHookPayload {
     constructor(public resource: APIResource, public response: APIResource) {}
 }
 
-export class PreWaitEventPayload {
+export class PreWaitHookPayload {
     constructor(public resource: APIResource) {}
 }
 
-export class PostWaitEventPayload {
+export class PostWaitHookPayload {
     constructor(public resource: APIResource, public result: WaitResult) {}
 }
 
-export class ReleaseExpiredEventPayload {
+export class ReleaseExpiredHookPayload {
     /**
-     * @param releaseName The name of the release that is expired.
-     * @param resources State of the resources in the release.
+     * @param state The state of the release that is expired.
      */
     constructor(
-        public releaseName: string, 
-        public resources: APIResource[],
-        public metadata: Record<string, string>,
-        public configMap: k8s.core.v1.ConfigMap,
+        public state: ReleaseState,
     ) {}
 }
 
@@ -92,13 +107,15 @@ export enum WaitResult {
     SKIPPED = 'skipped',
 }
 
-export type KubernetesLifecycleEventPayload = 
-    | PreCreateEventPayload 
-    | PostCreateEventPayload 
-    | PrePatchEventPayload 
-    | PostPatchEventPayload 
-    | PreDeleteEventPayload 
-    | PostDeleteEventPayload 
-    | PreWaitEventPayload 
-    | PostWaitEventPayload
-    | ReleaseExpiredEventPayload;
+export type KubernetesExportHookPayload = 
+    | PreParseStateHookPayload 
+    | PostParseStateHookPayload 
+    | PreCreateHookPayload 
+    | PostCreateHookPayload 
+    | PrePatchHookPayload 
+    | PostPatchHookPayload 
+    | PreDeleteHookPayload 
+    | PostDeleteHookPayload 
+    | PreWaitHookPayload 
+    | PostWaitHookPayload
+    | ReleaseExpiredHookPayload;
