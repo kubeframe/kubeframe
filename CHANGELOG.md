@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/kubeframe/kubeframe/compare/v2.0.1...v2.1.0) (2025-12-20)
+
+
+### Features
+
+* Multiple features ([0003a63](https://github.com/kubeframe/kubeframe/commit/0003a6323cf464a9bd4074af9b1deb7c329cb75c))
+
 ## [2.0.1](https://github.com/kubeframe/kubeframe/compare/v2.0.0...v2.0.1) (2025-11-29)
 
 
