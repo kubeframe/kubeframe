@@ -55,6 +55,12 @@ crds:
 
 ```
 
+### Contents of a project
+
+- src/application.ts - Application which can be composed of one or more components
+- src/component.ts - Sample component which can be composed of one or more Kubernetes resources.
+- src/main.ts - Entry point
+
 ### Build the project
 
 ```bash
@@ -63,24 +69,107 @@ npm install
 npm run build
 ```
 
-#### Contents of the generated project
+## Creating Application and Components
 
-##### Importing and using Kubernetes resources classes
-
-All dependencies from must be imported via `@kubeframe/k8s` alias.
+### Using Kubernetes resources classes
 
 Example:
 
 ```typescript
-import { k8s } from '@kubeframe/kubeframe-<version>';
+import { k8s, Component } from '@kubeframe/kubeframe-<version>';
+
+export class MyComponent extends Component {
+
+    constructor() {
+        super(MyComponent.name);
+    }
+
+    async build(): Promise<void> {
+        const service = new k8s.core.v1.Service({
+            metadata: {
+                name: 'my-service',
+            },
+        });
+
+        this.addResource(service);
+
+        const deployment = new k8s.apps.v1.Deployment({
+            metadata: k8s.meta.{
+                name: 'my-deployment',
+            },
+            spec: {
+                ...
+            }
+        });
+
+        this.addResource(deployment);
+    }
+}
+
+```
+
+All plain objects will be converted to classes implicitly. This approach can provide a lot of additional
+features that can be easily implemented through on of the common base classes:
+- `KubernetesType`
+- `APIObject`
+- `NamespacedAPIObject`
+- `APIObjectList`
+
+Example:
+
+```typescript
 
 const service = new k8s.core.v1.Service({
-    ...
+    // metadata will be converted into instance of k8s.meta.v1.ObjectMeta
+    metadata: {
+        name: 'my-service',
+    },
 });
+```
 
-const deployment = new k8s.apps.v1.Deployment({
-    ...
-});
+### Dependencies between Kubernetes resources
+
+It is possible to define dependencies between Kubernetes resources.
+Dependencies are checked and resources are sorted based on dependencies before exporting to:
+- YAML
+- Helm
+- Kubernetes - Rollback and destroy will use reverse order to rollback or destroy resources.
+
+Example:
+
+In this example `my-deployment` Deployment will be created before `my-service` Service.
+
+```typescript
+import { k8s, Component } from '@kubeframe/kubeframe-<version>';
+
+export class MyComponent extends Component {
+
+    constructor() {
+        super(MyComponent.name);
+    }
+
+    async build(): Promise<void> {
+        const service = new k8s.core.v1.Service({
+            metadata: {
+                name: 'my-service',
+            },
+        });
+
+        service.addDependency('apps/v1/Deployment/my-deployment');
+        this.addResource(service);
+
+        const deployment = new k8s.apps.v1.Deployment({
+            metadata: k8s.meta.{
+                name: 'my-deployment',
+            },
+            spec: {
+                ...
+            }
+        });
+
+        this.addResource(deployment);
+    }
+}
 
 ```
 

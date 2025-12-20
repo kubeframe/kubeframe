@@ -25,9 +25,9 @@ export class MyComponent extends Component {
 
             const dependencies: DependencyKey[] = [];
             const deploymentResource = new k8s.apps.v1.Deployment({
-                metadata: {
+                metadata: new k8s.meta.v1.ObjectMeta({
                     name: deployment.name,
-                },
+                }),
                 spec: {
                     replicas: deployment.replicas,
                     selector: {
