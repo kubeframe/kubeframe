@@ -10,7 +10,7 @@ export async function createProject(name: string, kubernetesVersion: string) {
         console.error(`Directory '${name}' already exists, aborting`);
         return;
     }
-    
+
     // Create project directory
     mkdirSync(projectDir);
 
@@ -72,6 +72,7 @@ export async function createProject(name: string, kubernetesVersion: string) {
     // Copy main.ts and application.ts from project_base
     copyFileSync(`${import.meta.dirname}/project_base/main.ts`, `${projectDir}/src/main.ts`);
     copyFileSync(`${import.meta.dirname}/project_base/application.ts`, `${projectDir}/src/application.ts`);
+    copyFileSync(`${import.meta.dirname}/project_base/component.ts`, `${projectDir}/src/component.ts`);
 
     // Replace kubeframe-version with the correct version in files
     replaceStringInFile(`${projectDir}/src/main.ts`, '@kubeframe/kubeframe-version', `@kubeframe/kubeframe-${kubernetesVersion}`);
