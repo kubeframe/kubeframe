@@ -1,9 +1,9 @@
-import { k8s, Application } from '@kubeframe/kubeframe-version';
+import { Application } from '@kubeframe/kubeframe-version';
 import { MyComponent } from './component.js';
 
 export class MyApplication extends Application {
     constructor() {
-        super();
+        super(MyApplication.name);
     }
 
     async build(): Promise<void> {
