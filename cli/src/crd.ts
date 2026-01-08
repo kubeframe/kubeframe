@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
 import { compile } from 'json-schema-to-typescript';
-import path = require('path');
+import path from 'node:path';
 import { Project, SyntaxKind } from 'ts-morph';
 import * as YAML from 'yaml';
 import {
