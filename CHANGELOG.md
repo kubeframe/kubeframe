@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.0](https://github.com/kubeframe/kubeframe/compare/v2.0.1...v2.1.0) (2026-01-08)
+
+
+### Features
+
+* Multiple features ([0003a63](https://github.com/kubeframe/kubeframe/commit/0003a6323cf464a9bd4074af9b1deb7c329cb75c))
+
+
+### Bug Fixes
+
+* `create-project` crashing when editing a file that was not copied over ([85877a8](https://github.com/kubeframe/kubeframe/commit/85877a8fc9b51f12ae620801ff9fd8d0672c66f2))
+* `create-project` crashing when editing a file that was not copied over ([70046e3](https://github.com/kubeframe/kubeframe/commit/70046e300baab9f42871ae5c98daa310524b8e5e))
+* missing application name from calling `super` ([1adb5c9](https://github.com/kubeframe/kubeframe/commit/1adb5c931a6aa2aec8d93016a079336fb4121687))
+* missing application name from calling `super` ([2672f37](https://github.com/kubeframe/kubeframe/commit/2672f37c660f33518cca494e5a753b2982e2f942))
+
 ## [2.0.1](https://github.com/kubeframe/kubeframe/compare/v2.0.0...v2.0.1) (2025-11-29)
 
 
